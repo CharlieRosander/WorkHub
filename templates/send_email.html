@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block content %}
+<title>Send Email</title>
+<div class="container mt-4">
+    <h2>Send Email</h2>
+    <form method="post" action="{{ url_for('send_email') }}">
+        <div class="mb-3">
+            <label for="to" class="form-label">To</label>
+            <input type="email" class="form-control" id="to" name="to" required value="charllit123@gmail.com">
+        </div>
+        <div class="mb-3">
+            <label for="subject" class="form-label">Subject</label>
+            <input type="text" class="form-control" id="subject" name="subject" required value="Webapp email test">
+        </div>
+        <div class="mb-3">
+            <label for="message" class="form-label">Message</label>
+            <textarea class="form-control" id="message" name="message" rows="4"
+                required>This is a test email using gmails API from my webapp</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+</div>
+
+{% endblock content %}

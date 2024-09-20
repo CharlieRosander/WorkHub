@@ -1,0 +1,28 @@
+@media (min-width: 1025px) {
+    .h-custom {
+        height: 100vh !important;
+    }
+}
+
+.nav-btn {
+    background-color: #212529;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.nav-btn:hover {
+    background-color: rgb(204, 204, 204);
+    color: #212529;
+}
+
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    color: #333;
+}

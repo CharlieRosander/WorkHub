@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container py-5 h-100">
+    <div class="row d-flex justify-content-center align-items-center h-100">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card rounded-3">
+                <div class="card-body p-4 p-md-5">
+                    <h3 class="mb-4 pb-2 pb-md-0 px-md-2">Registration Info</h3>
+                    <form class="px-md-2" method="post">
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="company_name">Company's Name</label>
+                            <input type="text" id="company_name" name="name" class="form-control" />
+                        </div>
+
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="date_applied">Date applied</label>
+                            <input type="date" id="date_applied" name="date_applied" class="form-control" />
+                        </div>
+
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="location">Location</label>
+                            <input type="text" id="location" name="location" class="form-control" />
+                        </div>
+
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="industry">Industry</label>
+                            <input type="text" id="industry" name="industry" class="form-control" />
+                        </div>
+
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="contact_person">Contact Person</label>
+                            <input type="text" id="contact_person" name="contact_person" class="form-control" />
+                        </div>
+
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="email">Email</label>
+                            <input type="text" id="email" name="email" class="form-control" />
+                        </div>
+
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="phone">Phone</label>
+                            <input type="text" id="phone" name="phone" class="form-control" />
+                        </div>
+
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="link">Link to website</label>
+                            <input type="text" id="link" name="link" class="form-control" />
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg mb-1">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

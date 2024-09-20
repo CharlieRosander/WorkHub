@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<title>Home</title>
+<div class="d-flex">
+    <div class="container d-flex justify-content-center mt-4" style="height: 100vh;">
+        <div class="row" style="width: inherit;">
+            <div class="col-12">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Company Name</th>
+                            <th scope="col">Date Applied</th>
+                            <th scope="col">Location</th>
+                            <th scope="col">Industry</th>
+                            <th scope="col">Contact Person</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Phone</th>
+                            <th scope="col">Link to website</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for company in companies %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>{{ company.name }}</td>
+                            <td>{{ company.date_applied }}</td>
+                            <td>{{ company.location }}</td>
+                            <td>{{ company.industry }}</td>
+                            <td>{{ company.contact_person }}</td>
+                            <td>{{ company.email }}</td>
+                            <td>{{ company.phone }}</td>
+                            <td><a href="{{ company.link }}">Go to page</a></td>
+                            <td><a href="{{ url_for('edit_company', id=company.id) }}" class="btn btn-primary btn-sm">Edit</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

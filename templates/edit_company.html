@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container py-5">
+    <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-md-10 col-lg-8 col-xl-6">
+            <div class="card shadow-lg">
+                <div class="card-body p-4 p-md-5">
+                    <h3 class="mb-4 pb-2 text-center">Edit Company</h3>
+                    <form method="post" class="px-md-2">
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="name">Company Name</label>
+                            <input type="text" id="name" name="name" value="{{ company.name }}" class="form-control" required>
+                        </div>
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="location">Location</label>
+                            <input type="text" id="location" name="location" value="{{ company.location }}" class="form-control" required>
+                        </div>
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="industry">Industry</label>
+                            <input type="text" id="industry" name="industry" value="{{ company.industry }}" class="form-control" required>
+                        </div>
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="contact_person">Contact Person</label>
+                            <input type="text" id="contact_person" name="contact_person" value="{{ company.contact_person }}" class="form-control" required>
+                        </div>
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="email">Email</label>
+                            <input type="email" id="email" name="email" value="{{ company.email }}" class="form-control" required>
+                        </div>
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="phone">Phone</label>
+                            <input type="text" id="phone" name="phone" value="{{ company.phone }}" class="form-control" required>
+                        </div>
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="link">Website Link</label>
+                            <input type="text" id="link" name="link" value="{{ company.link }}" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg mb-1 w-100">Update</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

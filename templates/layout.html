@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- CSS/Bootstrap link -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/stylesheet.css">
+</head>
+
+<body>
+    <header id="header">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <div class="row w-100 align-items-center">
+                    <!-- Left Column (Empty for Centering) -->
+                    <div class="col-3"></div>
+
+                    <!-- Center Column with Title -->
+                    <div class="col-6 text-center">
+                        <a class="navbar-brand mx-auto" href="{{ url_for('index') }}">
+                            <h1>Workhub</h1>
+                        </a>
+                    </div>
+
+                    <!-- Right Column with Dropdown for Logged-in User -->
+                    <div class="col-3 d-flex justify-content-end">
+                        {% if 'user_id' in session %}
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ current_user.email }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log out</a></li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Second row with Register Job and Send Email buttons -->
+        <nav class="navbar navbar-dark bg-dark justify-content-center">
+            <div class="container-fluid">
+                <div class="row w-100">
+                    <div class="col d-flex justify-content-center">
+                        <a class="btn btn-secondary mx-2" href="{{ url_for('register_company') }}">Register job</a>
+                        <a class="btn btn-secondary mx-2" href="{{ url_for('send_email') }}">Send Email</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Flash message -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ messages[0] }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main content -->
+    <div id="bodypage" class="container-fluid">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="fixed-bottom text-center">
+        <small>App/website made by Charlie Rosander</small>
+    </footer>
+
+    <!-- Bootstrap bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+
+    <!-- JavaScript för att automatiskt dölja flash-meddelanden efter 3 sekunder -->
+    <script>
+        setTimeout(function () {
+            var alert = document.querySelector('.alert');
+            if (alert) {
+                alert.classList.remove('show');
+                alert.classList.add('fade');
+                setTimeout(function () {
+                    alert.remove();  // Ta bort elementet helt efter animation
+                }, 500);  // Ge lite tid för att slutföra "fade"-animationen innan borttagning
+            }
+        }, 3000); // 3000 millisekunder = 3 sekunder
+    </script>
+</body>
+
+</html>
