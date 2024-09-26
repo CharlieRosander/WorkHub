@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, Integer, String
 
 db = SQLAlchemy()
 
@@ -17,8 +18,9 @@ class InquiredCompany(db.Model):
 
 
 class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    email = db.Column(db.String(255), unique=True, nullable=True)
-    password = db.Column(db.String(255), nullable=False)
+    __tablename__ = "user"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(150))
+    email = Column(String(150), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)
