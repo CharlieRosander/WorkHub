@@ -26,3 +26,26 @@ body {
 h2 {
     color: #333;
 }
+
+.btn-primary {
+    background-color: #0d121a;
+    border-color: #0d121a;
+}
+
+.btn-success {
+    background-color: #28a745;
+    /* Grön färg */
+    border-color: #28a745;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    /* Röd färg */
+    border-color: #dc3545;
+}
+
+#googlebtn {
+    background-color: #0d121a;
+    color: white;
+    border-color: #0d121a;
+}

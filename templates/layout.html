@@ -10,6 +10,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <link rel="stylesheet" href="/static/stylesheet.css">
+    <script src="https://kit.fontawesome.com/fc488dc40e.js" crossorigin="anonymous"></script>
+
 </head>
 
 <body>
@@ -53,6 +55,9 @@
                     <div class="col d-flex justify-content-center">
                         <a class="btn btn-secondary mx-2" href="{{ url_for('register_company') }}">Register job</a>
                         <a class="btn btn-secondary mx-2" href="{{ url_for('send_email') }}">Send Email</a>
+                        <a class="btn btn-secondary mx-2" href="{{ url_for('view_emails') }}">View emails</a>
+                        <a class="btn btn-secondary mx-2" href="{{ url_for('reset') }}">Reset user & google token</a>
+
                     </div>
                 </div>
             </div>
@@ -79,7 +84,7 @@
 
     <!-- Footer -->
     <footer class="fixed-bottom text-center">
-        <small>App/website made by Charlie Rosander</small>
+        <small>Made by Charlie Rosander</small>
     </footer>
 
     <!-- Bootstrap bundle with Popper -->

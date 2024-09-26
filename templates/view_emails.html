@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% block content %}
+<title>View Emails</title>
+<div class="container">
+    <h2>My Emails:</h2>
+    <ul class="list-group">
+        {% for email in emails %}
+        <li class="list-group-item mb-3">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>From:</strong> {{ email.from }}<br>
+                    <strong>Subject:</strong> {{ email.subject }}<br>
+                    <strong>Snippet:</strong> {{ email.snippet }}
+                </div>
+                <button class="btn btn-info" onclick="toggleEmail('{{ email.id }}')">View Full Email</button>
+            </div>
+            <div id="email-{{ email.id }}" class="email-body mt-3" style="display:none;">
+                <p>Loading full email...</p> <!-- Full email content will be displayed here -->
+                <button class="btn btn-secondary mt-3" onclick="toggleEmail('{{ email.id }}')">Close Email</button>
+            </div>
+        </li>
+        {% else %}
+        <li class="list-group-item">No emails to display.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<script>
+    // Function to toggle email body visibility
+    function toggleEmail(emailId) {
+        var emailBody = document.getElementById("email-" + emailId);
+        if (emailBody.style.display === "none") {
+            emailBody.style.display = "block";
+            loadFullEmail(emailId); // Load full email when expanding
+        } else {
+            emailBody.style.display = "none";
+        }
+    }
+
+    // Function to fetch and display full email content
+    function loadFullEmail(emailId) {
+        fetch(`/email_body/${emailId}`)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("email-" + emailId).innerHTML = data +
+                    '<button class="btn btn-secondary mt-3" onclick="toggleEmail(\'' + emailId + '\')">Close Email</button>';
+            })
+            .catch(error => {
+                document.getElementById("email-" + emailId).innerHTML = "<p>Error loading email content.</p>";
+            });
+    }
+</script>
+{% endblock content %}
