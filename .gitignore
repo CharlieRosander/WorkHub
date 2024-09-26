@@ -1,2 +1,5 @@
 mail_creds
 .env
+__pycache__
+*.pyc
+*.db
