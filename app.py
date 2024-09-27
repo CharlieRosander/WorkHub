@@ -1,4 +1,14 @@
-from flask import Flask, render_template, redirect, url_for, session, flash, request, g
+from flask import (
+    Flask,
+    render_template,
+    redirect,
+    url_for,
+    session,
+    flash,
+    request,
+    g,
+    jsonify,
+)
 from schema import db, User, InquiredCompany
 from google_oauth import (
     google_bp,
@@ -12,7 +22,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from company_service import register_company, delete_company, edit_company
-from gpt_service import send_to_gpt  # Add your GPT service function
+from gpt_service import get_gpt_response
 from email_service import get_gmail_email_by_id
 
 app = Flask(__name__)
@@ -75,7 +85,18 @@ def send_email():
             flash("Failed to send email.")
         return redirect(url_for("send_email"))
 
-    return render_template("send_email.html")
+    email_id = request.args.get("email_id")
+    subject = request.args.get("subject", "")
+    gpt_response = request.args.get("gpt_response", "")  # Fetch GPT response
+
+    # Fetch the email information based on the email_id
+    email = get_gmail_email_by_id(email_id) if email_id else None
+    if not email:
+        email = {"from": "", "subject": "", "body": ""}
+
+    return render_template(
+        "send_email.html", email=email, subject=subject, gpt_response=gpt_response
+    )
 
 
 @app.route("/view_emails")
@@ -103,21 +124,53 @@ def oauth_callback():
 @app.route("/process_email_for_gpt/<email_id>", methods=["POST"])
 @login_required
 def process_email_for_gpt(email_id):
-    # Fetch the full email content
     full_email = get_gmail_email_by_id(email_id)
 
     if not full_email:
         flash("Error: Could not retrieve the full email content.")
         return redirect(url_for("view_emails"))
 
-    # Send the email content to the GPT service
-    gpt_response = send_to_gpt(
-        full_email["snippet"]
-    )  # Assuming the snippet is the email body
+    # Get the full GPT response in one call
+    gpt_response = get_gpt_response(full_email["body"])
 
-    # Redirect to the send_email view and show the GPT response
     return render_template(
         "send_email.html", gpt_response=gpt_response, email=full_email
+    )
+
+
+@app.route("/regenerate_gpt_response", methods=["POST"])
+@login_required
+def regenerate_gpt_response():
+    email_body = request.form.get("email_body", "")
+
+    # Lägg till en kommentar för att begära ett nytt svar
+    comment = "Please regenerate the response and provide a different draft."
+    gpt_request = f"{email_body}\n\n{comment}"
+
+    # Skicka GPT-förfrågan
+    gpt_response = get_gpt_response(gpt_request)
+
+    # Rendera om sidan med det nya GPT-svaret
+    return render_template(
+        "send_email.html",
+        email={"from": "", "subject": "", "body": email_body},
+        gpt_response=gpt_response,
+    )
+
+
+@app.route("/generate_gpt_from_link", methods=["POST"])
+@login_required
+def generate_gpt_from_link():
+    link_or_text = request.form.get("link", "")
+
+    # Skicka länken eller texten till GPT för att generera ett svar
+    gpt_response = get_gpt_response(link_or_text)
+
+    # Rendera om sidan med GPT-svaret
+    return render_template(
+        "send_email.html",
+        email={"from": "", "subject": "", "body": ""},
+        gpt_response=gpt_response,
     )
 
 

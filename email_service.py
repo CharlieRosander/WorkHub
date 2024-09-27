@@ -33,7 +33,7 @@ def get_gmail_emails():
 
     try:
         # Fetch the list of messages using the Gmail API
-        results = service.users().messages().list(userId="me", maxResults=10).execute()
+        results = service.users().messages().list(userId="me", maxResults=20).execute()
         messages = results.get("messages", [])
 
         if not messages:
@@ -89,11 +89,9 @@ def get_gmail_email_by_id(email_id):
             .execute()
         )
 
-        # Extract the headers and body
         headers = email.get("payload", {}).get("headers", [])
         parts = email.get("payload", {}).get("parts", [])
 
-        # Function to recursively extract email content from the parts
         def get_body_from_parts(parts):
             for part in parts:
                 if part.get("mimeType") == "text/plain" and "data" in part.get(
@@ -106,12 +104,12 @@ def get_gmail_email_by_id(email_id):
                     return get_body_from_parts(part["parts"])
             return "(No body content found)"
 
-        # Decode the body content
+        # Get the email body
         body = get_body_from_parts(parts)
 
-        # Return the full email information
+        # Return subject, body, and other fields separately
         return {
-            "snippet": body,  # Full email body
+            "body": body,  # Only email body
             "subject": next(
                 (header["value"] for header in headers if header["name"] == "Subject"),
                 "(No Subject)",

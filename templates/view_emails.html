@@ -1,22 +1,31 @@
 {% extends "layout.html" %}
 {% block content %}
 <title>View Emails</title>
-<div class="container">
+<div class="container mt-5">
     <h2>My Emails:</h2>
     <ul class="list-group">
         {% for email in emails %}
-        <li class="list-group-item mb-3">
-            <div class="d-flex justify-content-between">
-                <div>
-                    <strong>From:</strong> {{ email.from }}<br>
-                    <strong>Subject:</strong> {{ email.subject }}<br>
-                    <strong>Snippet:</strong> {{ email.snippet }}
+        <li class="list-group-item mb-3 p-3 shadow-sm border rounded">
+            <div class="row">
+                <!-- Email information -->
+                <div class="col-md-8">
+                    <p><strong>From:</strong> {{ email.from }}</p>
+                    <p><strong>Subject:</strong> {{ email.subject }}</p>
+                    <p><strong>Snippet:</strong> {{ email.snippet }}</p>
                 </div>
-                <button class="btn btn-info" onclick="toggleEmail('{{ email.id }}')">View Full Email</button>
-                <form action="{{ url_for('process_email_for_gpt', email_id=email.id) }}" method="post" class="ml-2">
-                    <button class="btn btn-primary" type="submit">Send to GPT</button>
-                </form>
+                <!-- Buttons -->
+                <div class="col-md-4 d-flex justify-content-end align-items-center">
+                    <a href="javascript:void(0)" class="btn btn-info mx-2" onclick="toggleEmail('{{ email.id }}')">View
+                        Full Email</a>
+                    <a href="{{ url_for('send_email', email_id=email.id, subject='RE: ' ~ email.subject) }}"
+                        class="btn btn-secondary mx-2">Reply</a>
+                    <form action="{{ url_for('process_email_for_gpt', email_id=email.id) }}" method="post" class="mx-2">
+                        <button class="btn btn-dark" type="submit">Send to GPT</button>
+                    </form>
+                </div>
+
             </div>
+
             <div id="email-{{ email.id }}" class="email-body mt-3" style="display:none;">
                 <p>Loading full email...</p> <!-- Full email content will be displayed here -->
                 <button class="btn btn-secondary mt-3" onclick="toggleEmail('{{ email.id }}')">Close Email</button>
@@ -27,6 +36,7 @@
         {% endfor %}
     </ul>
 </div>
+
 
 <script>
     function toggleEmail(emailId) {
@@ -49,6 +59,12 @@
             .catch(error => {
                 document.getElementById("email-" + emailId).innerHTML = "<p>Error loading email content.</p>";
             });
+    }
+</script>
+<script>
+    function fillReply(subject) {
+        // Navigate to the 'send_email' route and populate the subject field with 'RE:'
+        window.location.href = "/send_email?subject=" + encodeURIComponent("RE: " + subject);
     }
 </script>
 {% endblock content %}

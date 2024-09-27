@@ -49,3 +49,76 @@ h2 {
     color: white;
     border-color: #0d121a;
 }
+
+/* För att justera kolumnernas utseende */
+.col-md-3 {
+    flex-grow: 1;
+    max-width: 30%;
+}
+
+/* För att ge lite mer marginal mellan kolumnerna */
+.mx-3 {
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+/* För att ge lite padding och snyggare boxar */
+.p-3 {
+    padding: 20px;
+}
+
+/* För att lägga till skugga runt kolumnerna */
+.border {
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f9f9f9;
+}
+
+/* Styling for email list items */
+.list-group-item {
+    background-color: #f8f9fa;
+    border-color: #e1e1e1;
+}
+
+/* Add shadow to email containers */
+.shadow-sm {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Button styling */
+.btn {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+/* Info button */
+.btn-info {
+    background-color: #00bcd4;
+    border-color: #00acc1;
+    color: white;
+}
+
+/* Dark button */
+.btn-dark {
+    background-color: #212529;
+    border-color: #1d1f21;
+    color: white;
+}
+
+/* Add margin to the buttons */
+.mx-2 {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+/* Förhindra oönskade indrag i början av texten */
+div.preformatted-text {
+    text-indent: 0;
+    margin-top: 0;
+    padding-left: 0;
+    white-space: pre-wrap;
+}
+
+.text-center {
+    text-align: center;
+}
