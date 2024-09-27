@@ -12,6 +12,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from company_service import register_company, delete_company, edit_company
+from gpt_service import send_to_gpt  # Add your GPT service function
+from email_service import get_gmail_email_by_id
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
@@ -96,6 +98,27 @@ def oauth_callback():
     session["user_id"] = user.id
     flash("Google login successful!")
     return redirect(url_for("index"))
+
+
+@app.route("/process_email_for_gpt/<email_id>", methods=["POST"])
+@login_required
+def process_email_for_gpt(email_id):
+    # Fetch the full email content
+    full_email = get_gmail_email_by_id(email_id)
+
+    if not full_email:
+        flash("Error: Could not retrieve the full email content.")
+        return redirect(url_for("view_emails"))
+
+    # Send the email content to the GPT service
+    gpt_response = send_to_gpt(
+        full_email["snippet"]
+    )  # Assuming the snippet is the email body
+
+    # Redirect to the send_email view and show the GPT response
+    return render_template(
+        "send_email.html", gpt_response=gpt_response, email=full_email
+    )
 
 
 @app.route("/register_company", methods=["GET", "POST"])

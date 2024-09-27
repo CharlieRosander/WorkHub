@@ -3,3 +3,4 @@ mail_creds
 __pycache__
 *.pyc
 *.db
+__pycache__/schema.cpython-312.pyc

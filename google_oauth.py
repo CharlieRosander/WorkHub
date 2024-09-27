@@ -22,8 +22,6 @@ google_bp = make_google_blueprint(
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     scope=SCOPES,
     redirect_to="oauth_callback",  # This matches the new route in app.py
-    reprompt_consent=True,
-    offline=True,
 )
 
 # Allow insecure transport for local development

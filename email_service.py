@@ -72,3 +72,55 @@ def get_gmail_emails():
         flash(f"An error occurred while fetching emails: {e}")
         print(f"Error fetching emails: {e}")
         return []
+
+
+def get_gmail_email_by_id(email_id):
+    service = get_gmail_service()
+    if not service:
+        flash("Could not initialize Gmail service.")
+        return None
+
+    try:
+        # Fetch the email message using the Gmail API
+        email = (
+            service.users()
+            .messages()
+            .get(userId="me", id=email_id, format="full")
+            .execute()
+        )
+
+        # Extract the headers and body
+        headers = email.get("payload", {}).get("headers", [])
+        parts = email.get("payload", {}).get("parts", [])
+
+        # Function to recursively extract email content from the parts
+        def get_body_from_parts(parts):
+            for part in parts:
+                if part.get("mimeType") == "text/plain" and "data" in part.get(
+                    "body", {}
+                ):
+                    return base64.urlsafe_b64decode(part["body"]["data"]).decode(
+                        "utf-8"
+                    )
+                elif part.get("parts"):
+                    return get_body_from_parts(part["parts"])
+            return "(No body content found)"
+
+        # Decode the body content
+        body = get_body_from_parts(parts)
+
+        # Return the full email information
+        return {
+            "snippet": body,  # Full email body
+            "subject": next(
+                (header["value"] for header in headers if header["name"] == "Subject"),
+                "(No Subject)",
+            ),
+            "from": next(
+                (header["value"] for header in headers if header["name"] == "From"),
+                "(No Sender)",
+            ),
+        }
+    except Exception as e:
+        flash(f"An error occurred while fetching the email: {e}")
+        return None

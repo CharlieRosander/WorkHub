@@ -14,11 +14,22 @@
         </div>
         <div class="mb-3">
             <label for="message" class="form-label">Message</label>
-            <textarea class="form-control" id="message" name="message" rows="4"
-                required>This is a test email using gmails API from my webapp</textarea>
+            <textarea class="form-control" id="message" name="message" rows="4" required>
+                {% if gpt_response %}
+                {{ gpt_response }}
+                {% else %}
+                This is a test email using gmails API from my webapp
+                {% endif %}
+            </textarea>
         </div>
         <button type="submit" class="btn btn-primary">Send</button>
     </form>
-</div>
 
+    {% if gpt_response %}
+    <div class="mt-4">
+        <h3>GPT Response:</h3>
+        <p>{{ gpt_response }}</p>
+    </div>
+    {% endif %}
+</div>
 {% endblock content %}
