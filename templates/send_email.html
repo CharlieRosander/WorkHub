@@ -1,35 +1,95 @@
 {% extends "layout.html" %}
 {% block content %}
 <title>Send Email</title>
-<div class="container mt-4">
-    <h2>Send Email</h2>
-    <form method="post" action="{{ url_for('send_email') }}">
-        <div class="mb-3">
-            <label for="to" class="form-label">To</label>
-            <input type="email" class="form-control" id="to" name="to" required value="charllit123@gmail.com">
+<div class="d-flex justify-content-center my-4">
+    <div class="row w-100 justify-content-center">
+        <!-- Original email column -->
+        <div class="col-md-3 mx-3 p-3 border rounded">
+            <h3 class="text-center">Original Email</h3>
+            <p><strong>From:</strong> {{ email.from }}</p>
+            <p><strong>Subject:</strong> {{ email.subject }}</p>
+            <div class="border p-3" style="height: 500px; overflow-y: auto; white-space: pre-wrap;">
+                {{ email.body }}
+            </div>
+            <!-- Reply button -->
+            <button class="btn btn-secondary mt-3" onclick="fillReply('{{ email.subject }}')">Reply</button>
         </div>
-        <div class="mb-3">
-            <label for="subject" class="form-label">Subject</label>
-            <input type="text" class="form-control" id="subject" name="subject" required value="Webapp email test">
-        </div>
-        <div class="mb-3">
-            <label for="message" class="form-label">Message</label>
-            <textarea class="form-control" id="message" name="message" rows="4" required>
-                {% if gpt_response %}
-                {{ gpt_response }}
-                {% else %}
-                This is a test email using gmails API from my webapp
-                {% endif %}
-            </textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Send</button>
-    </form>
 
-    {% if gpt_response %}
-    <div class="mt-4">
-        <h3>GPT Response:</h3>
-        <p>{{ gpt_response }}</p>
+        <!-- Your response column (empty by default) -->
+        <div class="col-md-3 mx-3 p-3 border rounded">
+            <h3 class="text-center">Your Response</h3>
+            <form method="post" action="{{ url_for('send_email') }}">
+                <div class="mb-3">
+                    <label for="to" class="form-label">To</label>
+                    <input type="email" class="form-control" id="to" name="to" required value="{{ email.from }}">
+                </div>
+                <div class="mb-3">
+                    <label for="subject" class="form-label">Subject</label>
+                    <input type="text" class="form-control" id="subject" name="subject" required value="{{ subject }}">
+                </div>
+                <div class="mb-3">
+                    <label for="message" class="form-label">Message</label>
+                    <textarea class="form-control" id="message" name="message" rows="12"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+        </div>
+
+        <!-- GPT response column -->
+        <div class="col-md-3 mx-3 p-3 border rounded">
+            <h3 class="text-center">GPT's Response</h3>
+            <div class="mb-3">
+                <label for="gpt_to" class="form-label">To</label>
+                <input type="email" class="form-control" id="gpt_to" name="gpt_to" value="{{ email.from }}">
+            </div>
+            <div class="mb-3">
+                <label for="gpt_subject" class="form-label">Subject</label>
+                <input type="text" class="form-control" id="gpt_subject" name="gpt_subject">
+            </div>
+            <div class="border p-3" style="height: 500px; overflow-y: auto; white-space: pre-wrap;"
+                id="gpt_response_div">
+                {{ gpt_response }}
+            </div>
+            <button class="btn btn-primary mt-3" onclick="useGptResponse()">Use GPT Response</button>
+            <form method="post" action="{{ url_for('regenerate_gpt_response') }}">
+                <input type="hidden" name="email_body" value="{{ email.body }}">
+                <button class="btn btn-warning mt-3" type="submit">Regenerate Response</button>
+            </form>
+            <form method="post" action="{{ url_for('generate_gpt_from_link') }}">
+                <div class="mb-3">
+                    <label for="link" class="form-label">Enter Link or Text</label>
+                    <textarea class="form-control" id="link" name="link" rows="4"></textarea>
+                </div>
+                <button class="btn btn-info mt-3" type="submit">Generate from Link</button>
+            </form>
+        </div>
     </div>
-    {% endif %}
 </div>
+
+<script>
+    function fillReply(originalSubject) {
+        document.getElementById("subject").value = "RE: " + originalSubject;
+    }
+
+    function useGptResponse() {
+        const gptResponse = document.getElementById("gpt_response_div").innerText;
+        document.getElementById("message").value = gptResponse;
+        document.getElementById("subject").value = document.getElementById("gpt_subject").value;
+    }
+
+    window.onload = function () {
+        const gptResponseDiv = document.getElementById("gpt_response_div");
+        let gptResponse = gptResponseDiv.innerText;
+
+        // Use a regex to capture the unique subject format, e.g. "-Subject...-"
+        const subjectMatch = gptResponse.match(/{Subject:\s*(.*?)}/);
+        if (subjectMatch) {
+            document.getElementById("gpt_subject").value = subjectMatch[1].trim();
+            gptResponse = gptResponse.replace(subjectMatch[0], "").trim();
+        }
+
+        gptResponseDiv.innerText = gptResponse;
+    };
+</script>
+
 {% endblock content %}
