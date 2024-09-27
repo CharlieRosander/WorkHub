@@ -19,7 +19,7 @@
                         Full Email</a>
                     <a href="{{ url_for('send_email', email_id=email.id, subject='RE: ' ~ email.subject) }}"
                         class="btn btn-secondary mx-2">Reply</a>
-                    <form action="{{ url_for('process_email_for_gpt', email_id=email.id) }}" method="post" class="mx-2">
+                    <form action="{{ url_for('process_email_for_gpt', email_id=email.id, original_email_subject=email.subject) }}" method="post" class="mx-2">
                         <button class="btn btn-dark" type="submit">Send to GPT</button>
                     </form>
                 </div>

@@ -7,25 +7,28 @@
         <div class="col-md-3 mx-3 p-3 border rounded">
             <h3 class="text-center">Original Email</h3>
             <p><strong>From:</strong> {{ email.from }}</p>
-            <p><strong>Subject:</strong> {{ email.subject }}</p>
+            <p><strong>Original Subject:</strong> {{ original_email_subject }}</p>
+            <input type="hidden" name="original_email_subject" value="{{ original_email_subject }}">
+
             <div class="border p-3" style="height: 500px; overflow-y: auto; white-space: pre-wrap;">
                 {{ email.body }}
             </div>
             <!-- Reply button -->
-            <button class="btn btn-secondary mt-3" onclick="fillReply('{{ email.subject }}')">Reply</button>
+            <button class="btn btn-secondary mt-3" onclick="fillReply('{{ original_email_subject }}')">Reply</button>
         </div>
 
-        <!-- Your response column (empty by default) -->
+        <!-- Your response column -->
         <div class="col-md-3 mx-3 p-3 border rounded">
             <h3 class="text-center">Your Response</h3>
-            <form method="post" action="{{ url_for('send_email') }}">
+            <form id="sendEmailForm" method="post" action="{{ url_for('send_email') }}">
                 <div class="mb-3">
                     <label for="to" class="form-label">To</label>
                     <input type="email" class="form-control" id="to" name="to" required value="{{ email.from }}">
                 </div>
                 <div class="mb-3">
-                    <label for="subject" class="form-label">Subject</label>
-                    <input type="text" class="form-control" id="subject" name="subject" required value="{{ subject }}">
+                    <label for="your_response_subject" class="form-label">Your Response Subject</label>
+                    <input type="text" class="form-control" id="your_response_subject" name="your_response_subject"
+                        required value="{{ your_response_subject }}">
                 </div>
                 <div class="mb-3">
                     <label for="message" class="form-label">Message</label>
@@ -43,24 +46,22 @@
                 <input type="email" class="form-control" id="gpt_to" name="gpt_to" value="{{ email.from }}">
             </div>
             <div class="mb-3">
-                <label for="gpt_subject" class="form-label">Subject</label>
-                <input type="text" class="form-control" id="gpt_subject" name="gpt_subject">
+                <label for="gpt_response_subject" class="form-label">GPT Response Subject</label>
+                <input type="text" class="form-control" id="gpt_response_subject" name="gpt_response_subject"
+                    value="{{ your_response_subject }}">
             </div>
             <div class="border p-3" style="height: 500px; overflow-y: auto; white-space: pre-wrap;"
                 id="gpt_response_div">
                 {{ gpt_response }}
             </div>
             <button class="btn btn-primary mt-3" onclick="useGptResponse()">Use GPT Response</button>
+
+            <!-- Form for regenerating GPT response -->
             <form method="post" action="{{ url_for('regenerate_gpt_response') }}">
                 <input type="hidden" name="email_body" value="{{ email.body }}">
+                <input type="hidden" name="to" value="{{ email.from }}">
+                <input type="hidden" name="your_response_subject" value="{{ your_response_subject }}">
                 <button class="btn btn-warning mt-3" type="submit">Regenerate Response</button>
-            </form>
-            <form method="post" action="{{ url_for('generate_gpt_from_link') }}">
-                <div class="mb-3">
-                    <label for="link" class="form-label">Enter Link or Text</label>
-                    <textarea class="form-control" id="link" name="link" rows="4"></textarea>
-                </div>
-                <button class="btn btn-info mt-3" type="submit">Generate from Link</button>
             </form>
         </div>
     </div>
@@ -68,23 +69,22 @@
 
 <script>
     function fillReply(originalSubject) {
-        document.getElementById("subject").value = "RE: " + originalSubject;
+        document.getElementById("your_response_subject").value = "RE: " + originalSubject;
     }
 
     function useGptResponse() {
         const gptResponse = document.getElementById("gpt_response_div").innerText;
         document.getElementById("message").value = gptResponse;
-        document.getElementById("subject").value = document.getElementById("gpt_subject").value;
+        document.getElementById("your_response_subject").value = document.getElementById("gpt_response_subject").value;
     }
 
     window.onload = function () {
         const gptResponseDiv = document.getElementById("gpt_response_div");
         let gptResponse = gptResponseDiv.innerText;
 
-        // Use a regex to capture the unique subject format, e.g. "-Subject...-"
         const subjectMatch = gptResponse.match(/{Subject:\s*(.*?)}/);
         if (subjectMatch) {
-            document.getElementById("gpt_subject").value = subjectMatch[1].trim();
+            document.getElementById("gpt_response_subject").value = subjectMatch[1].trim();
             gptResponse = gptResponse.replace(subjectMatch[0], "").trim();
         }
 

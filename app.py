@@ -77,7 +77,9 @@ def login():
 def send_email():
     if request.method == "POST":
         success = send_gmail_email(
-            request.form["to"], request.form["subject"], request.form["message"]
+            request.form["to"],
+            request.form["your_response_subject"],
+            request.form["message"],
         )
         if success:
             flash("Email sent successfully!")
@@ -86,16 +88,25 @@ def send_email():
         return redirect(url_for("send_email"))
 
     email_id = request.args.get("email_id")
-    subject = request.args.get("subject", "")
+    original_email_subject = request.args.get("original_email_subject", "")
+    gpt_response_subject = request.args.get("gpt_response_subject", "")
     gpt_response = request.args.get("gpt_response", "")  # Fetch GPT response
 
     # Fetch the email information based on the email_id
     email = get_gmail_email_by_id(email_id) if email_id else None
     if not email:
-        email = {"from": "", "subject": "", "body": ""}
+        email = {
+            "from": "",
+            "subject": original_email_subject,
+            "body": "",
+        }
 
     return render_template(
-        "send_email.html", email=email, subject=subject, gpt_response=gpt_response
+        "send_email.html",
+        email=email,
+        original_email_subject=original_email_subject,
+        your_response_subject=gpt_response_subject,
+        gpt_response=gpt_response,
     )
 
 
@@ -121,7 +132,7 @@ def oauth_callback():
     return redirect(url_for("index"))
 
 
-@app.route("/process_email_for_gpt/<email_id>", methods=["POST"])
+@app.route("/process_email_for_gpt/<email_id>", methods=["GET", "POST"])
 @login_required
 def process_email_for_gpt(email_id):
     full_email = get_gmail_email_by_id(email_id)
@@ -133,8 +144,15 @@ def process_email_for_gpt(email_id):
     # Get the full GPT response in one call
     gpt_response = get_gpt_response(full_email["body"])
 
+    # Bevara ämnet och skicka det till HTML-sidan
     return render_template(
-        "send_email.html", gpt_response=gpt_response, email=full_email
+        "send_email.html",
+        gpt_response=gpt_response,
+        email=full_email,
+        original_email_subject=full_email[
+            "subject"
+        ],  # Bevara original email subject här
+        your_response_subject=f"RE: {full_email['subject']}",  # Your response subject
     )
 
 
@@ -142,19 +160,25 @@ def process_email_for_gpt(email_id):
 @login_required
 def regenerate_gpt_response():
     email_body = request.form.get("email_body", "")
+    to = request.form.get("to", "")
+    your_response_subject = request.form.get("your_response_subject", "")
+    original_email_subject = request.form.get("original_email_subject", "")
 
-    # Lägg till en kommentar för att begära ett nytt svar
+    if not email_body:
+        flash("Original email saknas. Kunde inte regenerera GPT-svaret.")
+        return redirect(url_for("send_email"))
+
     comment = "Please regenerate the response and provide a different draft."
     gpt_request = f"{email_body}\n\n{comment}"
 
-    # Skicka GPT-förfrågan
     gpt_response = get_gpt_response(gpt_request)
 
-    # Rendera om sidan med det nya GPT-svaret
     return render_template(
         "send_email.html",
-        email={"from": "", "subject": "", "body": email_body},
+        email={"from": to, "subject": original_email_subject, "body": email_body},
         gpt_response=gpt_response,
+        original_email_subject=original_email_subject,  # Skicka tillbaka original ämnet
+        your_response_subject=your_response_subject,
     )
 
 
