@@ -33,7 +33,10 @@
             <tr id="email-{{ email.id }}" style="display:none;">
                 <td colspan="4">
                     <div class="p-3" style="border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
-                        <div style="white-space: pre-wrap;">{{ email.body }}</div>
+                        <!-- Placeholder for the email content -->
+                        <div class="email-body-content" style="white-space: pre-wrap;">
+                            <!-- Innehållet laddas dynamiskt här -->
+                        </div>
                         <div class="d-flex justify-content-end">
                             <button class="btn btn-secondary mt-3"
                                 onclick="toggleEmail('{{ email.id }}')">Close</button>
@@ -53,8 +56,25 @@
 <script>
     function toggleEmail(emailId) {
         var emailRow = document.getElementById("email-" + emailId);
-        emailRow.style.display = (emailRow.style.display === "none") ? "table-row" : "none";
+        if (emailRow.style.display === "none" || emailRow.style.display === "") {
+            emailRow.style.display = "table-row";
+            loadFullEmail(emailId);
+        } else {
+            emailRow.style.display = "none";
+        }
+    }
+
+    function loadFullEmail(emailId) {
+        fetch(`/email_body/${emailId}`)
+            .then(response => response.text())
+            .then(data => {
+                var emailRow = document.getElementById("email-" + emailId);
+                emailRow.querySelector('.email-body-content').innerHTML = data;
+            })
+            .catch(error => {
+                var emailRow = document.getElementById("email-" + emailId);
+                emailRow.querySelector('.email-body-content').innerHTML = "<p>Error loading email content.</p>";
+            });
     }
 </script>
-
 {% endblock content %}

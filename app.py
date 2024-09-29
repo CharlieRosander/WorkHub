@@ -125,7 +125,7 @@ def email_body(email_id):
     return full_email["body"]
 
 
-@app.route("/process_email_for_gpt/<email_id>", methods=["POST"])
+@app.route("/process_email_for_gpt/<email_id>", methods=["GET", "POST"])
 @login_required
 def process_email_for_gpt(email_id):
     full_email = get_gmail_email_by_id(email_id)
