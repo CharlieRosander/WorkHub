@@ -1,77 +1,60 @@
 {% extends "layout.html" %}
 {% block content %}
 <title>View Emails</title>
+
 <div class="container mt-5">
-    <h2>My Emails:</h2>
-    <ul class="list-group">
-        {% for email in emails %}
-        <li class="list-group-item mb-3 p-3 shadow-sm border rounded">
-            <div class="row">
-                <div class="col-md-8">
-                    <p><strong>From:</strong> {{ email.from }}</p>
-                    <p><strong>Subject:</strong> {{ email.subject }}</p>
-                    <!-- Show snippet only when the full email is hidden -->
-                    <p id="snippet-{{ email.id }}"><strong>Snippet:</strong> {{ email.snippet }}</p>
-                </div>
-                <div class="col-md-4 d-flex justify-content-end align-items-center">
-                    <button class="btn btn-info mx-2" onclick="toggleEmail('{{ email.id }}')">View Full Email</button>
+    <h2 class="mb-4">My Emails</h2>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col">From</th>
+                <th scope="col">Subject</th>
+                <th scope="col">Snippet</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for email in emails %}
+            <tr>
+                <td><strong>{{ email.from }}</strong></td>
+                <td>{{ email.subject }}</td>
+                <td>{{ email.snippet }}</td>
+                <td class="d-flex justify-content-end">
                     <a href="{{ url_for('send_email', email_id=email.id, subject='RE: ' ~ email.subject) }}"
-                        class="btn btn-secondary mx-2">Reply</a>
-                    <form action="{{ url_for('process_email_for_gpt', email_id=email.id) }}" method="post" class="mx-2">
-                        <button class="btn btn-dark" type="submit">Send to GPT</button>
+                        class="btn btn-outline-secondary btn-sm mx-1">Reply</a>
+                    <button class="btn btn-outline-primary btn-sm mx-1"
+                        onclick="toggleEmail('{{ email.id }}')">View</button>
+                    <form action="{{ url_for('process_email_for_gpt', email_id=email.id) }}" method="post" class="mx-1">
+                        <button class="btn btn-outline-dark btn-sm" type="submit">GPT</button>
                     </form>
-                </div>
-            </div>
-
+                </td>
+            </tr>
             <!-- Full email body hidden by default -->
-            <div id="email-{{ email.id }}" class="email-body mt-3 p-3"
-                style="display:none; border: 1px solid #ccc; border-radius: 5px;">
-                <!-- Full email content styled similarly to a typical email -->
-                <textarea class="form-control" style="white-space: pre-wrap;">
-                    {{ email.body }}
-                 </textarea>
-
-                <!-- Close button aligned to the right -->
-                <div class="d-flex justify-content-end">
-                    <button class="btn btn-secondary mt-3" onclick="toggleEmail('{{ email.id }}')">Close Email</button>
-                </div>
-            </div>
-        </li>
-        {% else %}
-        <li class="list-group-item">No emails to display.</li>
-        {% endfor %}
-    </ul>
+            <tr id="email-{{ email.id }}" style="display:none;">
+                <td colspan="4">
+                    <div class="p-3" style="border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
+                        <div style="white-space: pre-wrap;">{{ email.body }}</div>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-secondary mt-3"
+                                onclick="toggleEmail('{{ email.id }}')">Close</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">No emails to display.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
-
 
 <script>
     function toggleEmail(emailId) {
-        var emailBody = document.getElementById("email-" + emailId);
-        if (emailBody.style.display === "none") {
-            emailBody.style.display = "block";
-            loadFullEmail(emailId);
-        } else {
-            emailBody.style.display = "none";
-        }
-    }
-
-    function loadFullEmail(emailId) {
-        fetch(`/email_body/${emailId}`)
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById("email-" + emailId).innerHTML = data +
-                    '<button class="btn btn-secondary mt-3" onclick="toggleEmail(\'' + emailId + '\')">Close Email</button>';
-            })
-            .catch(error => {
-                document.getElementById("email-" + emailId).innerHTML = "<p>Error loading email content.</p>";
-            });
-    }
-
-</script>
-<script>
-    function fillReply(subject) {
-        // Navigate to the 'send_email' route and populate the subject field with 'RE:'
-        window.location.href = "/send_email?subject=" + encodeURIComponent("RE: " + subject);
+        var emailRow = document.getElementById("email-" + emailId);
+        emailRow.style.display = (emailRow.style.display === "none") ? "table-row" : "none";
     }
 </script>
+
 {% endblock content %}
