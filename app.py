@@ -7,7 +7,6 @@ from flask import (
     flash,
     request,
     g,
-    jsonify,
 )
 from schema import db, User, InquiredCompany
 from google_oauth import (
@@ -16,14 +15,18 @@ from google_oauth import (
     handle_google_authorization,
     is_google_authorized,
 )
-from email_service import send_gmail_email, get_gmail_emails
+from email_service import (
+    send_gmail_email,
+    get_gmail_emails,
+    get_gmail_email_by_id,
+    prepare_email_data,
+)
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from company_service import register_company, delete_company, edit_company
 from gpt_service import get_gpt_response
-from email_service import get_gmail_email_by_id
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
@@ -38,7 +41,7 @@ app.register_blueprint(google_bp)
 @app.route("/")
 def index():
     if "user_id" in session:
-        companies = InquiredCompany.query.all()  # Hämtar alla företag från databasen
+        companies = InquiredCompany.query.all()  # Fetch all companies from the database
         return render_template("index.html", companies=companies)
     return redirect(url_for("login"))
 
@@ -72,40 +75,6 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/send_email", methods=["GET", "POST"])
-@login_required
-def send_email():
-    if request.method == "POST":
-        success = send_gmail_email(
-            request.form["to"], request.form["subject"], request.form["message"]
-        )
-        if success:
-            flash("Email sent successfully!")
-        else:
-            flash("Failed to send email.")
-        return redirect(url_for("send_email"))
-
-    email_id = request.args.get("email_id")
-    subject = request.args.get("subject", "")
-    gpt_response = request.args.get("gpt_response", "")  # Fetch GPT response
-
-    # Fetch the email information based on the email_id
-    email = get_gmail_email_by_id(email_id) if email_id else None
-    if not email:
-        email = {"from": "", "subject": "", "body": ""}
-
-    return render_template(
-        "send_email.html", email=email, subject=subject, gpt_response=gpt_response
-    )
-
-
-@app.route("/view_emails")
-@login_required
-def view_emails():
-    emails = get_gmail_emails()
-    return render_template("view_emails.html", emails=emails)
-
-
 @app.route("/oauth_callback")
 def oauth_callback():
     if not is_google_authorized():
@@ -121,6 +90,41 @@ def oauth_callback():
     return redirect(url_for("index"))
 
 
+@app.route("/send_email", methods=["GET", "POST"])
+@login_required
+def send_email():
+    if request.method == "POST":
+        if send_gmail_email(
+            request.form["to"], request.form["subject"], request.form["message"]
+        ):
+            flash("Email sent successfully!")
+        return redirect(url_for("view_emails"))
+
+    # Use the prepare_email_data function to get data for the template
+    email_data = prepare_email_data(
+        email_id=request.args.get("email_id"),
+        subject=request.args.get("subject", ""),
+        gpt_response=request.args.get("gpt_response", ""),
+    )
+    return render_template("send_email.html", **email_data)
+
+
+@app.route("/view_emails")
+@login_required
+def view_emails():
+    emails = get_gmail_emails()
+    return render_template("view_emails.html", emails=emails)
+
+
+@app.route("/email_body/<email_id>")
+@login_required
+def email_body(email_id):
+    full_email = get_gmail_email_by_id(email_id)
+    if not full_email:
+        return "Not Found", 404
+    return full_email["body"]
+
+
 @app.route("/process_email_for_gpt/<email_id>", methods=["POST"])
 @login_required
 def process_email_for_gpt(email_id):
@@ -130,18 +134,24 @@ def process_email_for_gpt(email_id):
         flash("Error: Could not retrieve the full email content.")
         return redirect(url_for("view_emails"))
 
-    # Get the full GPT response in one call
     gpt_response = get_gpt_response(full_email["body"])
 
-    return render_template(
-        "send_email.html", gpt_response=gpt_response, email=full_email
+    # Bevara ämnet i formuläret
+    email_data = prepare_email_data(
+        email_id=email_id,
+        subject="RE: " + full_email["subject"],
+        gpt_response=gpt_response,
     )
+    return render_template("send_email.html", **email_data)
 
 
-@app.route("/regenerate_gpt_response", methods=["POST"])
+@app.route("/regenerate_gpt_response", methods=["GET", "POST"])
 @login_required
 def regenerate_gpt_response():
     email_body = request.form.get("email_body", "")
+    subject = request.form.get("subject", "")
+    to = request.form.get("to", "")
+    message = request.form.get("message", "")
 
     # Lägg till en kommentar för att begära ett nytt svar
     comment = "Please regenerate the response and provide a different draft."
@@ -150,12 +160,13 @@ def regenerate_gpt_response():
     # Skicka GPT-förfrågan
     gpt_response = get_gpt_response(gpt_request)
 
-    # Rendera om sidan med det nya GPT-svaret
-    return render_template(
-        "send_email.html",
-        email={"from": "", "subject": "", "body": email_body},
-        gpt_response=gpt_response,
-    )
+    # Bevara befintliga data och rendera formuläret med det nya GPT-svaret
+    email_data = {
+        "email": {"from": to, "subject": subject, "body": email_body},
+        "subject": subject,
+        "gpt_response": gpt_response,
+    }
+    return render_template("send_email.html", **email_data)
 
 
 @app.route("/generate_gpt_from_link", methods=["POST"])
@@ -166,12 +177,11 @@ def generate_gpt_from_link():
     # Skicka länken eller texten till GPT för att generera ett svar
     gpt_response = get_gpt_response(link_or_text)
 
-    # Rendera om sidan med GPT-svaret
-    return render_template(
-        "send_email.html",
-        email={"from": "", "subject": "", "body": ""},
-        gpt_response=gpt_response,
-    )
+    # Förbered e-postdata med GPT-svaret
+    email_data = prepare_email_data(gpt_response=gpt_response)
+
+    # Rendera formuläret med GPT:s svar
+    return render_template("send_email.html", **email_data)
 
 
 @app.route("/register_company", methods=["GET", "POST"])

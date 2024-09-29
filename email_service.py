@@ -4,10 +4,28 @@ import base64
 from flask import flash
 
 
+def handle_error(error_message):
+    """Centralized error handling to improve reusability and consistency."""
+    flash(f"An error occurred: {error_message}")
+    print(error_message)
+    return False
+
+
+def prepare_email_data(email_id=None, subject=None, gpt_response=None):
+    """Prepares email data with optional email and GPT response."""
+    email = (
+        get_gmail_email_by_id(email_id)
+        if email_id
+        else {"from": "", "subject": "", "body": ""}
+    )
+    return {"email": email, "subject": subject, "gpt_response": gpt_response}
+
+
 def send_gmail_email(to, subject, message_text):
+    """Sends an email using Gmail API."""
     service = get_gmail_service()
     if not service:
-        return False  # If Gmail service couldn't be initialized, abort
+        return handle_error("Failed to initialize Gmail service.")
 
     try:
         # Create the email
@@ -20,25 +38,27 @@ def send_gmail_email(to, subject, message_text):
         service.users().messages().send(userId="me", body={"raw": raw}).execute()
         return True
     except Exception as e:
-        flash(f"An error occurred while sending the email: {str(e)}")
-        return False
+        return handle_error(f"Failed to send email: {str(e)}")
 
 
 def get_gmail_emails():
+    """Fetches the list of received emails from Gmail."""
     service = get_gmail_service()
     if not service:
-        flash("Could not initialize Gmail service.")
-        print("Could not initialize Gmail service")
-        return []
+        return handle_error("Failed to initialize Gmail service.")
 
     try:
-        # Fetch the list of messages using the Gmail API
-        results = service.users().messages().list(userId="me", maxResults=20).execute()
+        # Fetch the list of received messages (only from inbox) using the Gmail API
+        results = (
+            service.users()
+            .messages()
+            .list(userId="me", labelIds=["INBOX"], maxResults=20)
+            .execute()
+        )
         messages = results.get("messages", [])
 
         if not messages:
             flash("No messages found.")
-            print("No messages found")
             return []
 
         email_list = []
@@ -47,8 +67,8 @@ def get_gmail_emails():
                 service.users().messages().get(userId="me", id=message["id"]).execute()
             )
 
-            # Extract the headers and provide defaults if missing
-            headers = msg["payload"]["headers"]
+            # Extract headers and provide defaults if missing
+            headers = msg["payload"].get("headers", [])
 
             subject = next(
                 (header["value"] for header in headers if header["name"] == "Subject"),
@@ -59,26 +79,25 @@ def get_gmail_emails():
                 "(No Sender)",
             )
 
-            email_data = {
-                "id": message["id"],  # Include the email's unique ID
-                "snippet": msg["snippet"],
-                "subject": subject,
-                "from": from_email,
-            }
-            email_list.append(email_data)
+            email_list.append(
+                {
+                    "id": message["id"],
+                    "snippet": msg.get("snippet", ""),
+                    "subject": subject,
+                    "from": from_email,
+                }
+            )
 
         return email_list
     except Exception as e:
-        flash(f"An error occurred while fetching emails: {e}")
-        print(f"Error fetching emails: {e}")
-        return []
+        return handle_error(f"Failed to fetch emails: {str(e)}")
 
 
 def get_gmail_email_by_id(email_id):
+    """Fetches a specific email by its ID."""
     service = get_gmail_service()
     if not service:
-        flash("Could not initialize Gmail service.")
-        return None
+        return handle_error("Failed to initialize Gmail service.")
 
     try:
         # Fetch the email message using the Gmail API
@@ -93,6 +112,7 @@ def get_gmail_email_by_id(email_id):
         parts = email.get("payload", {}).get("parts", [])
 
         def get_body_from_parts(parts):
+            """Extracts the body of the email from its parts."""
             for part in parts:
                 if part.get("mimeType") == "text/plain" and "data" in part.get(
                     "body", {}
@@ -104,12 +124,11 @@ def get_gmail_email_by_id(email_id):
                     return get_body_from_parts(part["parts"])
             return "(No body content found)"
 
-        # Get the email body
+        # Extract the email body
         body = get_body_from_parts(parts)
 
-        # Return subject, body, and other fields separately
         return {
-            "body": body,  # Only email body
+            "body": body,
             "subject": next(
                 (header["value"] for header in headers if header["name"] == "Subject"),
                 "(No Subject)",
@@ -120,5 +139,4 @@ def get_gmail_email_by_id(email_id):
             ),
         }
     except Exception as e:
-        flash(f"An error occurred while fetching the email: {e}")
-        return None
+        return handle_error(f"Failed to fetch email by ID: {str(e)}")

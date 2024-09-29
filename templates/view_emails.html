@@ -7,28 +7,34 @@
         {% for email in emails %}
         <li class="list-group-item mb-3 p-3 shadow-sm border rounded">
             <div class="row">
-                <!-- Email information -->
                 <div class="col-md-8">
                     <p><strong>From:</strong> {{ email.from }}</p>
                     <p><strong>Subject:</strong> {{ email.subject }}</p>
-                    <p><strong>Snippet:</strong> {{ email.snippet }}</p>
+                    <!-- Show snippet only when the full email is hidden -->
+                    <p id="snippet-{{ email.id }}"><strong>Snippet:</strong> {{ email.snippet }}</p>
                 </div>
-                <!-- Buttons -->
                 <div class="col-md-4 d-flex justify-content-end align-items-center">
-                    <a href="javascript:void(0)" class="btn btn-info mx-2" onclick="toggleEmail('{{ email.id }}')">View
-                        Full Email</a>
+                    <button class="btn btn-info mx-2" onclick="toggleEmail('{{ email.id }}')">View Full Email</button>
                     <a href="{{ url_for('send_email', email_id=email.id, subject='RE: ' ~ email.subject) }}"
                         class="btn btn-secondary mx-2">Reply</a>
                     <form action="{{ url_for('process_email_for_gpt', email_id=email.id) }}" method="post" class="mx-2">
                         <button class="btn btn-dark" type="submit">Send to GPT</button>
                     </form>
                 </div>
-
             </div>
 
-            <div id="email-{{ email.id }}" class="email-body mt-3" style="display:none;">
-                <p>Loading full email...</p> <!-- Full email content will be displayed here -->
-                <button class="btn btn-secondary mt-3" onclick="toggleEmail('{{ email.id }}')">Close Email</button>
+            <!-- Full email body hidden by default -->
+            <div id="email-{{ email.id }}" class="email-body mt-3 p-3"
+                style="display:none; border: 1px solid #ccc; border-radius: 5px;">
+                <!-- Full email content styled similarly to a typical email -->
+                <textarea class="form-control" style="white-space: pre-wrap;">
+                    {{ email.body }}
+                 </textarea>
+
+                <!-- Close button aligned to the right -->
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-secondary mt-3" onclick="toggleEmail('{{ email.id }}')">Close Email</button>
+                </div>
             </div>
         </li>
         {% else %}
@@ -60,6 +66,7 @@
                 document.getElementById("email-" + emailId).innerHTML = "<p>Error loading email content.</p>";
             });
     }
+
 </script>
 <script>
     function fillReply(subject) {
