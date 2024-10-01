@@ -6,6 +6,8 @@ from functools import wraps
 import os
 from schema import db, User
 from werkzeug.security import generate_password_hash
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 
 # Define the scopes required for Google OAuth and Gmail API
 SCOPES = [
@@ -55,6 +57,18 @@ def get_gmail_service():
         client_id=os.getenv("GOOGLE_CLIENT_ID"),
         client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     )
+
+    # Försök att uppdatera token om den har gått ut
+    if creds.expired and creds.refresh_token:
+        try:
+            creds.refresh(Request())
+            session["google_oauth_token"] = {
+                "access_token": creds.token,
+                "refresh_token": creds.refresh_token,
+            }
+        except Exception as e:
+            flash("Token has expired, please login again.")
+            return redirect(url_for("login"))
 
     service = build("gmail", "v1", credentials=creds)
     return service

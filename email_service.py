@@ -45,7 +45,7 @@ def get_gmail_emails():
     """Fetches the list of received emails from Gmail."""
     service = get_gmail_service()
     if not service:
-        return handle_error("Failed to initialize Gmail service.")
+        return []  # Return an empty list instead of False
 
     try:
         # Fetch the list of received messages (only from inbox) using the Gmail API
@@ -90,7 +90,8 @@ def get_gmail_emails():
 
         return email_list
     except Exception as e:
-        return handle_error(f"Failed to fetch emails: {str(e)}")
+        handle_error(f"Failed to fetch emails: {str(e)}")
+        return []
 
 
 def get_gmail_email_by_id(email_id):

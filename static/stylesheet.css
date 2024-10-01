@@ -50,23 +50,6 @@ h2 {
     border-color: #0d121a;
 }
 
-/* För att justera kolumnernas utseende */
-.col-md-3 {
-    flex-grow: 1;
-    max-width: 30%;
-}
-
-/* För att ge lite mer marginal mellan kolumnerna */
-.mx-3 {
-    margin-left: 15px;
-    margin-right: 15px;
-}
-
-/* För att ge lite padding och snyggare boxar */
-.p-3 {
-    padding: 20px;
-}
-
 /* För att lägga till skugga runt kolumnerna */
 .border {
     border: 1px solid #ccc;
@@ -121,4 +104,14 @@ div.preformatted-text {
 
 .text-center {
     text-align: center;
+}
+
+.email-column {
+    margin-right: 20px;
+    /* Lägg till utrymme mellan kolumnerna */
+}
+
+.email-column:last-child {
+    margin-right: 0;
+    /* Ingen marginal för sista kolumnen */
 }

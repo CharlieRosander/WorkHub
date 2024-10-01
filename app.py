@@ -26,13 +26,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from company_service import register_company, delete_company, edit_company
-from gpt_service import get_gpt_response
+from gpt_service import send_gpt_prompt
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.getenv('DATABASE_PATH')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
+
+response_assistant_id = os.getenv("RESPONSE_ASSISTANT_ID")
+compose_assistant_id = os.getenv("COMPOSE_ASSISTANT_ID")
 
 # Register Google OAuth blueprint
 app.register_blueprint(google_bp)
@@ -90,7 +93,7 @@ def oauth_callback():
     return redirect(url_for("index"))
 
 
-@app.route("/send_email", methods=["GET", "POST"])
+@app.route("/send_email", methods=["POST"])
 @login_required
 def send_email():
     if request.method == "POST":
@@ -125,6 +128,7 @@ def email_body(email_id):
     return full_email["body"]
 
 
+# This route is the "Response" type of the GPT call
 @app.route("/process_email_for_gpt/<email_id>", methods=["POST"])
 @login_required
 def process_email_for_gpt(email_id):
@@ -134,7 +138,11 @@ def process_email_for_gpt(email_id):
         flash("Error: Could not retrieve the full email content.")
         return redirect(url_for("view_emails"))
 
-    gpt_response = get_gpt_response(full_email["body"])
+    # Skicka e-postens innehåll till Response-assistenten för att generera ett svar
+    gpt_response = send_gpt_prompt(
+        full_email["body"], assistant_id=response_assistant_id
+    )
+    print(gpt_response)
 
     # Bevara ämnet i formuläret
     email_data = prepare_email_data(
@@ -145,7 +153,8 @@ def process_email_for_gpt(email_id):
     return render_template("send_email.html", **email_data)
 
 
-@app.route("/regenerate_gpt_response", methods=["GET", "POST"])
+## This route is the "Regenerate" assistant-type of the GPT call - MAYBE ##
+@app.route("/regenerate_gpt_response", methods=["POST"])
 @login_required
 def regenerate_gpt_response():
     email_body = request.form.get("email_body", "")
@@ -157,8 +166,9 @@ def regenerate_gpt_response():
     comment = "Please regenerate the response and provide a different draft."
     gpt_request = f"{email_body}\n\n{comment}"
 
-    # Skicka GPT-förfrågan
-    gpt_response = get_gpt_response(gpt_request)
+    # Skickar Emailet till Compose-assistenten för att generera ett nytt svar
+    gpt_response = send_gpt_prompt(gpt_request, assistant_id=compose_assistant_id)
+    print(gpt_response)
 
     # Bevara befintliga data och rendera formuläret med det nya GPT-svaret
     email_data = {
@@ -169,13 +179,19 @@ def regenerate_gpt_response():
     return render_template("send_email.html", **email_data)
 
 
-@app.route("/generate_gpt_from_link", methods=["GET", "POST"])
+### This route is the "Compose" type of the GPT call
+@app.route("/generate_gpt_from_link", methods=["POST"])
 @login_required
 def generate_gpt_from_link():
-    link_or_text = request.form.get("link", "")
+    source_content = request.form.get("source_content", "")
+    additional_instructions = request.form.get("additional_instructions", "")
 
-    # Skicka länken eller texten till GPT för att generera ett svar
-    gpt_response = get_gpt_response(link_or_text)
+    # Formatera förfrågan för GPT
+    gpt_input = f"Source Content:\n{source_content}\n\nAdditional Instructions:\n{additional_instructions}"
+
+    # Skicka formaterad indata till GPT
+    gpt_response = send_gpt_prompt(gpt_input, assistant_id=compose_assistant_id)
+    print(gpt_response)
 
     # Förbered e-postdata med GPT-svaret
     email_data = prepare_email_data(gpt_response=gpt_response)
@@ -231,5 +247,7 @@ def inject_user():
 
 if __name__ == "__main__":
     with app.app_context():
+        if not os.path.exists(os.getenv("DATABASE_DIR")):
+            os.mkdir(os.getenv("DATABASE_DIR"))
         db.create_all()
     app.run(debug=True)

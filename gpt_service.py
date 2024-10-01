@@ -9,10 +9,10 @@ dotenv.load_dotenv()
 openai_key = os.getenv("OPENAI_KEY")
 
 client = OpenAI()
-assistant_id = os.getenv("ASSISTANT_ID")
 
 
-def get_gpt_response(email_content):
+# MIght have to change this to reflect change in assistant id structure?
+def send_gpt_prompt(email_content, assistant_id):
     try:
         thread = client.beta.threads.create()
 
@@ -36,7 +36,7 @@ def get_gpt_response(email_content):
                         if content_block.type == "text":
                             gpt_response = content_block.text.value
                             print(gpt_response)
-                            return gpt_response
+                            return gpt_response  # This only returns the "text" from the response, not the full response, ex. for debugging purposes
         else:
             print(run.status)
 
