@@ -125,7 +125,7 @@ def email_body(email_id):
     return full_email["body"]
 
 
-@app.route("/process_email_for_gpt/<email_id>", methods=["GET", "POST"])
+@app.route("/process_email_for_gpt/<email_id>", methods=["POST"])
 @login_required
 def process_email_for_gpt(email_id):
     full_email = get_gmail_email_by_id(email_id)
@@ -169,7 +169,7 @@ def regenerate_gpt_response():
     return render_template("send_email.html", **email_data)
 
 
-@app.route("/generate_gpt_from_link", methods=["POST"])
+@app.route("/generate_gpt_from_link", methods=["GET", "POST"])
 @login_required
 def generate_gpt_from_link():
     link_or_text = request.form.get("link", "")

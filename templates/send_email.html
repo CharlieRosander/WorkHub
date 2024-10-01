@@ -16,7 +16,7 @@
         <!-- Your response column -->
         <div class="col-lg-4 col-md-6 col-12 p-3 border rounded" style="height: 550px;">
             <h3 class="text-center">Your Response</h3>
-            <form method="post" action="{{ url_for('send_email') }}">
+            <form method="post" action="{{ url_for('send_email') }}" onsubmit="return confirmSendEmail();">
                 <div class="mb-3">
                     <label for="to" class="form-label">To</label>
                     <input type="email" class="form-control" id="to" name="to" required value="{{ email.from }}">
@@ -103,5 +103,9 @@
 
         gptResponseDiv.innerText = gptResponse;
     };
+
+    function confirmSendEmail() {
+        return confirm("Are you sure you want to send this email?");
+    }
 </script>
 {% endblock content %}
