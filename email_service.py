@@ -45,7 +45,7 @@ def get_gmail_emails():
     """Fetches the list of received emails from Gmail."""
     service = get_gmail_service()
     if not service:
-        return []  # Return an empty list instead of False
+        return []
 
     try:
         # Fetch the list of received messages (only from inbox) using the Gmail API

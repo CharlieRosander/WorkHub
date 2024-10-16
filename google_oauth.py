@@ -23,7 +23,7 @@ google_bp = make_google_blueprint(
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     scope=SCOPES,
-    redirect_to="oauth_callback",  # This matches the new route in app.py
+    redirect_to="oauth_callback",
 )
 
 # Allow insecure transport for local development
@@ -102,7 +102,7 @@ def handle_google_authorization():
             email=user_info["email"],
             password=generate_password_hash(
                 "password", method="pbkdf2:sha256"
-            ),  # Placeholder password
+            ),  # Placeholder password - not used for Google login and will likely be removed/changed in the future
         )
         db.session.add(user)
         db.session.commit()

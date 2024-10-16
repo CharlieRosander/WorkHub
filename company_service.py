@@ -53,7 +53,7 @@ def edit_company(id):
             company.date_applied = (
                 datetime.strptime(request.form.get("date_applied"), "%Y-%m-%d")
                 if request.form.get("date_applied")
-                else company.date_applied  # Behåll det gamla värdet om inget nytt skickas
+                else company.date_applied
             )
             company.location = request.form["location"]
             company.industry = request.form["industry"]

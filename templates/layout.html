@@ -20,7 +20,6 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container-fluid">
                 <div class="row w-100 align-items-center">
-                    <!-- Left Column (Empty for Centering) -->
                     <div class="col-3"></div>
 
                     <!-- Center Column with Title -->
@@ -53,7 +52,8 @@
             <div class="container-fluid">
                 <div class="row w-100">
                     <div class="col d-flex justify-content-center">
-                        <a class="btn btn-secondary mx-2" href="{{ url_for('register_company_route') }}">Register job</a>
+                        <a class="btn btn-secondary mx-2" href="{{ url_for('register_company_route') }}">Register
+                            job</a>
                         <a class="btn btn-secondary mx-2" href="{{ url_for('send_email') }}">Send Email</a>
                         <a class="btn btn-secondary mx-2" href="{{ url_for('view_emails') }}">View emails</a>
                         <a class="btn btn-secondary mx-2" href="{{ url_for('reset') }}">Reset user & google token</a>
@@ -92,7 +92,7 @@
         integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
         crossorigin="anonymous"></script>
 
-    <!-- JavaScript för att automatiskt dölja flash-meddelanden efter 3 sekunder -->
+    <!-- JavaScript för att automatiskt dölja flash-meddelanden -->
     <script>
         setTimeout(function () {
             var alert = document.querySelector('.alert');
@@ -100,10 +100,10 @@
                 alert.classList.remove('show');
                 alert.classList.add('fade');
                 setTimeout(function () {
-                    alert.remove();  // Ta bort elementet helt efter animation
-                }, 500);  // Ge lite tid för att slutföra "fade"-animationen innan borttagning
+                    alert.remove();
+                }, 500);
             }
-        }, 3000); // 3000 millisekunder = 3 sekunder
+        }, 3000);
     </script>
 </body>
 

@@ -44,7 +44,7 @@ app.register_blueprint(google_bp)
 @app.route("/")
 def index():
     if "user_id" in session:
-        companies = InquiredCompany.query.all()  # Fetch all companies from the database
+        companies = InquiredCompany.query.all()
         return render_template("index.html", companies=companies)
     return redirect(url_for("login"))
 
@@ -93,7 +93,7 @@ def oauth_callback():
     return redirect(url_for("index"))
 
 
-@app.route("/send_email", methods=["POST"])
+@app.route("/send_email", methods=["GET", "POST"])
 @login_required
 def send_email():
     if request.method == "POST":
@@ -162,7 +162,6 @@ def regenerate_gpt_response():
     to = request.form.get("to", "")
     message = request.form.get("message", "")
 
-    # Lägg till en kommentar för att begära ett nytt svar
     comment = "Please regenerate the response and provide a different draft."
     gpt_request = f"{email_body}\n\n{comment}"
 
@@ -186,17 +185,13 @@ def generate_gpt_from_link():
     source_content = request.form.get("source_content", "")
     additional_instructions = request.form.get("additional_instructions", "")
 
-    # Formatera förfrågan för GPT
     gpt_input = f"Source Content:\n{source_content}\n\nAdditional Instructions:\n{additional_instructions}"
 
-    # Skicka formaterad indata till GPT
     gpt_response = send_gpt_prompt(gpt_input, assistant_id=compose_assistant_id)
     print(gpt_response)
 
-    # Förbered e-postdata med GPT-svaret
     email_data = prepare_email_data(gpt_response=gpt_response)
 
-    # Rendera formuläret med GPT:s svar
     return render_template("send_email.html", **email_data)
 
 
@@ -220,7 +215,7 @@ def edit_company_route(id):
 
 @app.route("/reset")
 def reset():
-    session.pop("google_token", None)  # Remove the token from the session
+    session.pop("google_token", None)
     session.pop("user_id", None)
     flash("Reauthorization required. Please login again.")
     return redirect(url_for("login"))
