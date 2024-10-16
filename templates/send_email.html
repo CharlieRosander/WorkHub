@@ -5,13 +5,13 @@
 
 <div class="d-flex justify-content-center">
     <div class="row" style="width: 90%;">
-        
+
         <!-- Original Email Section -->
         <div class="col p-3 border rounded email-column">
             <h3 class="text-center">Original Email</h3>
             <p><strong>From:</strong> {{ email.from or 'Sender Name' }}</p>
             <p><strong>Subject:</strong> {{ email.subject or 'Email Subject' }}</p>
-            <div class="border p-3 overflow-auto" style="height: 450px; white-space: pre-wrap;">
+            <div class="border p-3 overflow-auto" style="height: 450px; white-space: pre-line;">
                 {{ email.body or '<p class="text-muted">No email content available.</p>'|safe }}
             </div>
         </div>
@@ -41,7 +41,7 @@
 
         <!-- GPT's Response Section -->
         <div class="col p-3 border rounded email-column">
-            <h3 class="text-center">GPT's Email</h3>
+            <h3 class="text-center">GPT's Draft</h3>
             <form id="gpt_form">
                 <div class="mb-3">
                     <label for="gpt_to" class="form-label">To</label>
