@@ -6,3 +6,5 @@ __pycache__
 __pycache__/schema.cpython-312.pyc
 database
 specs.md
+GPT-Instructions-specific.md
+GPT-Instructions.md
