@@ -1,0 +1,238 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container py-5 h-100">
+    <div class="row d-flex justify-content-center h-100">
+        <!-- Website Scraping -->
+        <div class="col mt-4">
+            <div class="card rounded-3">
+                <div class="card-body p-4 p-md-5">
+                    <h3 class="mb-4 pb-2 pb-md-0 px-md-2">Website Scraping</h3>
+                    <form class="px-md-2" method="post" action="{{ url_for('scrape_job_listing') }}">
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="scrape_link">Website to Scrape</label>
+                            <input type="text" id="scrape_link" name="scrape_link" class="form-control" required />
+                        </div>
+                        <div class="form-outline mb-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Scrape Website
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Table of Previously Scraped Data -->
+                    {% if scraped_data %}
+                    <div class="mt-4">
+                        <h5>Previously Scraped Data</h5>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Scraped URL</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in scraped_data %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ data.scraped_url }}</td>
+                                    <td class="table-actions">
+                                        <div class="d-flex flex-column">
+
+                                            <!-- View Button with Dropdown -->
+                                            <div class="dropdown mb-2">
+                                                <button class="btn btn-warning btn-sm w-100 dropdown-toggle"
+                                                    type="button" id="viewDropdown{{ data.id }}"
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="viewDropdown{{ data.id }}">
+                                                    <li>
+                                                        <button class="dropdown-item view-html-btn"
+                                                            data-bs-toggle="modal" data-bs-target="#dynamicViewModal"
+                                                            data-title="Raw HTML for {{ data.scraped_url }}"
+                                                            data-content="{{ data.raw_html | e }}"
+                                                            data-bs-toggle="tooltip" title="View Raw HTML">
+                                                            <i class="bi bi-file-earmark-code"></i> Raw HTML
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button class="dropdown-item view-html-btn"
+                                                            data-bs-toggle="modal" data-bs-target="#dynamicViewModal"
+                                                            data-title="Pretty HTML for {{ data.scraped_url }}"
+                                                            data-content="{{ data.pretty_html | e }}"
+                                                            data-bs-toggle="tooltip" title="View Pretty HTML">
+                                                            <i class="bi bi-file-earmark-text"></i> Pretty HTML
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button class="dropdown-item view-html-btn"
+                                                            data-bs-toggle="modal" data-bs-target="#dynamicViewModal"
+                                                            data-title="Filtered HTML for {{ data.scraped_url }}"
+                                                            data-content="{{ data.filtered_html | e }}"
+                                                            data-bs-toggle="tooltip" title="View Filtered HTML">
+                                                            <i class="bi bi-file-earmark-richtext"></i> Filtered HTML
+                                                        </button>
+                                                    </li>
+                                                    {% if data.gpt_cleaned_html %}
+                                                    <li>
+                                                        <button class="dropdown-item view-html-btn"
+                                                            data-bs-toggle="modal" data-bs-target="#dynamicViewModal"
+                                                            data-title="GPT-cleaned HTML for {{ data.scraped_url }}"
+                                                            data-content="{{ data.gpt_cleaned_html | e }}"
+                                                            data-bs-toggle="tooltip" title="View GPT-cleaned HTML">
+                                                            <i class="bi bi-file-earmark-check"></i> GPT-cleaned HTML
+                                                        </button>
+                                                    </li>
+                                                    {% endif %}
+                                                </ul>
+                                            </div>
+
+                                            <!-- Send Button with Dropdown -->
+                                            <div class="dropdown mb-2">
+                                                <button class="btn btn-success btn-sm w-100 dropdown-toggle"
+                                                    type="button" id="sendDropdown{{ data.id }}"
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-send"></i> Send
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="sendDropdown{{ data.id }}">
+                                                    <li>
+                                                        <form method="post"
+                                                            action="{{ url_for('process_html', html_type='raw', id=data.id) }}">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="bi bi-send-check"></i> Send Raw to GPT
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    <li>
+                                                        <form method="post"
+                                                            action="{{ url_for('process_html', html_type='pretty', id=data.id) }}">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="bi bi-send-plus"></i> Send Pretty to GPT
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    <li>
+                                                        <form method="post"
+                                                            action="{{ url_for('process_html', html_type='filtered', id=data.id) }}">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="bi bi-send-dash"></i> Send Filtered to GPT
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    {# Removed the "Send GPT-cleaned to GPT" option #}
+                                                    {# {% if data.gpt_cleaned_html %}
+                                                    <li>
+                                                        <form method="post"
+                                                            action="{{ url_for('process_html', html_type='gpt_cleaned', id=data.id) }}">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="bi bi-send-fill"></i> Send GPT-cleaned to GPT
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    {% endif %} #}
+                                                </ul>
+                                            </div>
+
+                                            <!-- Save Button with Dropdown -->
+                                            <div class="dropdown mb-2">
+                                                <button class="btn btn-primary btn-sm w-100 dropdown-toggle"
+                                                    type="button" id="saveDropdown{{ data.id }}"
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-download"></i> Save Options
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="saveDropdown{{ data.id }}">
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ url_for('save_file', html_type='raw', id=data.id) }}"
+                                                            data-bs-toggle="tooltip" title="Download Raw HTML">
+                                                            <i class="bi bi-file-earmark-arrow-down"></i> Save Raw HTML
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ url_for('save_file', html_type='pretty', id=data.id) }}"
+                                                            data-bs-toggle="tooltip" title="Download Pretty HTML">
+                                                            <i class="bi bi-file-earmark-arrow-down-fill"></i> Save
+                                                            Pretty HTML
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ url_for('save_file', html_type='filtered', id=data.id) }}"
+                                                            data-bs-toggle="tooltip" title="Download Filtered HTML">
+                                                            <i class="bi bi-file-earmark-arrow-down"></i> Save Filtered
+                                                            HTML
+                                                        </a>
+                                                    </li>
+                                                    {% if data.gpt_cleaned_html %}
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ url_for('save_file', html_type='gpt_cleaned', id=data.id) }}"
+                                                            data-bs-toggle="tooltip" title="Download GPT-cleaned HTML">
+                                                            <i class="bi bi-file-earmark-arrow-down-fill"></i> Save
+                                                            GPT-cleaned HTML
+                                                        </a>
+                                                    </li>
+                                                    {% endif %}
+                                                </ul>
+                                            </div>
+
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamisk Modal för Visning av HTML -->
+    <div class="modal fade" id="dynamicViewModal" tabindex="-1" aria-labelledby="dynamicViewModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dynamicViewModalLabel">Content</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="dynamicViewModalContent"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript för Dynamiska Modaler och Tooltips -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialisera Bootstrap Tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
+            // Dynamisk Modal för View
+            var dynamicViewModal = document.getElementById('dynamicViewModal');
+            dynamicViewModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var title = button.getAttribute('data-title');
+                var content = button.getAttribute('data-content');
+
+                var modalTitle = dynamicViewModal.querySelector('.modal-title');
+                var modalContent = dynamicViewModal.querySelector('#dynamicViewModalContent');
+
+                modalTitle.textContent = title;
+                modalContent.textContent = content;
+            });
+        });
+    </script>
+
+</div>
+
+{% endblock %}

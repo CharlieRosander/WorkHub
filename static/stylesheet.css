@@ -115,3 +115,76 @@ div.preformatted-text {
     margin-right: 0;
     /* Ingen marginal för sista kolumnen */
 }
+
+.modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 1055;
+    /* Högre än innehållet */
+    background-color: white;
+    /* Färg för att matcha modalens bakgrund */
+    border-bottom: 1px solid #dee2e6;
+    /* Valfritt: lägg till en skiljelinje */
+}
+
+.modal-body pre {
+    background-color: #f8f9fa;
+    /* Ljus bakgrund */
+    border: 1px solid #ddd;
+    /* Lätt ram */
+    border-radius: 5px;
+    /* Rundade hörn */
+    padding: 15px;
+    /* Utrymme runt texten */
+    white-space: pre-wrap;
+    /* Radbrytning */
+    word-wrap: break-word;
+    /* Bryt långa ord */
+    font-family: "Courier New", Courier, monospace;
+    /* Monospace typsnitt */
+    font-size: 14px;
+    /* Gör texten lite större */
+    line-height: 1.6;
+    /* Förbättra radavstånd */
+    color: #343a40;
+    /* Mörk text för kontrast */
+}
+
+/* .table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
+} */
+
+.table-actions {
+    max-width: 300px;
+    /* Begränsa bredden */
+}
+
+.card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.card button {
+    font-size: 0.9rem;
+}
+
+.dropdown-menu {
+    width: 100%;
+}
+
+/* Anpassade hover-effekter för dropdown-items */
+.dropdown-menu .dropdown-item:hover {
+    background-color: #f0f0f0;
+    /* Ljusgrå bakgrund vid hover */
+    transition: background-color 0.3s ease;
+}
+
+/* Ändra textfärg vid hover om det behövs */
+.dropdown-menu .dropdown-item:hover {
+    color: #000;
+    /* Svart text vid hover */
+}

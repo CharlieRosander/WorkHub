@@ -24,3 +24,12 @@ class User(db.Model):
     name = Column(String(150))
     email = Column(String(150), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
+
+
+class ScrapedContent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    raw_html = db.Column(db.Text, nullable=False)
+    pretty_html = db.Column(db.Text, nullable=False)
+    filtered_html = db.Column(db.Text)
+    gpt_cleaned_html = db.Column(db.Text)
+    scraped_url = db.Column(db.String(255), nullable=False)
