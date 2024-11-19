@@ -240,6 +240,7 @@ def scrape_job_listing():
     return redirect(url_for("webscraping"))
 
 
+### Process HTML with webscrape assistant ###
 @app.route("/process_html/<html_type>/<int:id>", methods=["POST"])
 @login_required
 def process_html(html_type, id):
@@ -254,7 +255,6 @@ def process_html(html_type, id):
         flash(f"Error: {html_type.capitalize()} HTML not available.", "danger")
         return redirect(url_for("webscraping"))
 
-    # Anropa GPT-processorn
     gpt_response = process_html_with_gpt(
         html_content, assistant_id=webscrape_assistant_id
     )
@@ -320,7 +320,6 @@ def save_file():
         html_content = data.gpt_cleaned_html
         filename = f"gpt_cleaned_html_{data.id}.html"
     else:
-        # Detta fall är redan täckt ovan, men lägg till för säkerhets skull
         flash("Invalid 'html_type' parameter.", "danger")
         return redirect(url_for("webscraping"))
 
@@ -329,14 +328,12 @@ def save_file():
 
     # Skicka fil som nedladdning
     try:
-        # Använd BytesIO för att hantera filen i minnet
         file_stream = io.BytesIO(html_content.encode("utf-8"))
         return send_file(
             file_stream,
             mimetype="text/html",
             as_attachment=True,
-            download_name=filename,  # För Flask >= 2.0
-            # attachment_filename=filename,  # Använd detta för Flask < 2.0
+            download_name=filename,
         )
     except Exception as e:
         flash(f"An error occurred while sending the file: {str(e)}", "danger")
@@ -344,7 +341,6 @@ def save_file():
 
 
 def get_data_by_id(data_id):
-    # Implementera denna funktion för att hämta data baserat på data_id
     return ScrapedContent.query.get(data_id)
 
 
