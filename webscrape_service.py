@@ -36,7 +36,7 @@ def save_html_to_file(html_content, html_type, id, listing_name=None, save_path=
     :param html_content: Innehållet som ska sparas.
     :param html_type: Typ av HTML (raw, pretty, filtered, gpt_cleaned).
     :param id: ID för det relaterade innehållet.
-    :param listing_name: Namnet som ska användas för filnamnet (från GPT).
+    :param listing_name: Namnet som ska användas för filnamnet (från GPT eller URL).
     :param save_path: Anpassad sökväg för filen (valfritt).
     :return: Filens sökväg.
     """
@@ -44,7 +44,7 @@ def save_html_to_file(html_content, html_type, id, listing_name=None, save_path=
         # Om inget save_path ges, skapa en säker filväg i 'downloads'
         os.makedirs("downloads", exist_ok=True)
 
-        # Använd listing_name för filnamn (eller "Unnamed" om inget finns)
+        # Använd listing_name för filnamn
         safe_listing_name = re.sub(
             r"[^\w\-_. ]", "_", listing_name if listing_name else "Unnamed"
         )

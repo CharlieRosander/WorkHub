@@ -369,17 +369,16 @@ def save_file():
         flash(f"{html_type.capitalize()} HTML not available.", "danger")
         return redirect(url_for("webscraping"))
 
-    # Kontrollera och använd listing_name
-    if not data.listing_name:
-        flash("No filename generated for this entry.", "danger")
-        return redirect(url_for("webscraping"))
+    # Använd listing_name eller scraped_url som fallback
+    filename_base = data.listing_name or data.scraped_url
+    safe_filename = re.sub(r"[^\w\-_. ]", "_", filename_base)
 
     try:
         # Spara filen med rätt namn och returnera den
         file_path = save_html_to_file(
-            html_content, html_type, data_id, listing_name=data.listing_name
+            html_content, html_type, data_id, listing_name=safe_filename
         )
-        flash(f"File saved successfully as {data.listing_name}.html", "success")
+        flash(f"File saved successfully as {safe_filename}.html", "success")
         return send_file(file_path, as_attachment=True)
     except Exception as e:
         flash(f"An error occurred while saving the file: {str(e)}", "danger")
