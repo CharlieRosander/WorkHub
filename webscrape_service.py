@@ -1,5 +1,8 @@
 import requests
+from datetime import datetime
 from bs4 import BeautifulSoup
+import os
+import re
 
 
 def scrape_website(url):
@@ -16,6 +19,7 @@ def scrape_website(url):
                 "raw_html": raw_html,
                 "pretty_html": pretty_html,
                 "filtered_html": filtered_html,
+                "scraped_date": datetime.now(),
             }
         else:
             return {
@@ -25,31 +29,34 @@ def scrape_website(url):
         return {"error": str(e)}
 
 
-import os
-
-
-def save_html_to_file(html_content, html_type, id, save_path=None):
+def save_html_to_file(html_content, html_type, id, listing_name=None, save_path=None):
     """
     Sparar HTML-innehåll till en fil och returnerar filens sökväg.
 
     :param html_content: Innehållet som ska sparas.
     :param html_type: Typ av HTML (raw, pretty, filtered, gpt_cleaned).
     :param id: ID för det relaterade innehållet.
-    :param save_path: Anpassad sökväg för filen.
+    :param listing_name: Namnet som ska användas för filnamnet (från GPT).
+    :param save_path: Anpassad sökväg för filen (valfritt).
     :return: Filens sökväg.
     """
     try:
-        # Skapa anpassad sökväg eller använd standard
-        if not save_path:
-            os.makedirs("downloads", exist_ok=True)
-            filename = f"{html_type}_html_{id}.html"
-            save_path = os.path.join("downloads", filename)
+        # Om inget save_path ges, skapa en säker filväg i 'downloads'
+        os.makedirs("downloads", exist_ok=True)
 
-        # Spara innehållet till filen
-        with open(save_path, "w", encoding="utf-8") as file:
+        # Använd listing_name för filnamn (eller "Unnamed" om inget finns)
+        safe_listing_name = re.sub(
+            r"[^\w\-_. ]", "_", listing_name if listing_name else "Unnamed"
+        )
+        filename = f"{safe_listing_name}_{html_type}.html"
+
+        # Fullständig sökväg för filen
+        file_path = os.path.join("downloads", filename)
+
+        # Skriv HTML-innehållet till filen
+        with open(file_path, "w", encoding="utf-8") as file:
             file.write(html_content)
 
-        return save_path
+        return file_path
     except Exception as e:
         raise Exception(f"An error occurred while saving the file: {str(e)}")
-

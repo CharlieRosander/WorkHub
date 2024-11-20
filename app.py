@@ -9,6 +9,7 @@ from flask import (
     g,
     send_file,
     abort,
+    jsonify,
 )
 from schema import db, User, InquiredCompany, ScrapedContent
 from google_oauth import (
@@ -32,6 +33,7 @@ from company_service import register_company, delete_company, edit_company
 from gpt_service import send_gpt_prompt, process_html_with_gpt
 import io
 import logging
+import re
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
@@ -42,6 +44,7 @@ db.init_app(app)
 response_assistant_id = os.getenv("RESPONSE_ASSISTANT_ID")
 compose_assistant_id = os.getenv("COMPOSE_ASSISTANT_ID")
 webscrape_assistant_id = os.getenv("WEBSCRAPE_ASSISTANT_ID")
+naming_assistant_id = os.getenv("NAMING_ASSISTANT_ID")
 
 # Register Google OAuth blueprint
 app.register_blueprint(google_bp)
@@ -208,6 +211,7 @@ def generate_gpt_from_link():
     return render_template("send_email.html", **email_data)
 
 
+# Webscrape link using beautifulsoup. Save the raw, pretty and filtered html to the database
 @app.route("/scrape_job_listing", methods=["POST"])
 @login_required
 def scrape_job_listing():
@@ -228,7 +232,9 @@ def scrape_job_listing():
             pretty_html=scrape_result.get("pretty_html"),
             filtered_html=scrape_result.get("filtered_html"),
             scraped_url=url,
+            scraped_date=scrape_result.get("scraped_date"),
         )
+
         db.session.add(new_scraped_content)
         db.session.commit()
         flash("Website scraped and data saved successfully!", "success")
@@ -255,6 +261,7 @@ def process_html(html_type, id):
         flash(f"Error: {html_type.capitalize()} HTML not available.", "danger")
         return redirect(url_for("webscraping"))
 
+    # Send HTML to GPT for processing
     gpt_response = process_html_with_gpt(
         html_content, assistant_id=webscrape_assistant_id
     )
@@ -279,6 +286,61 @@ def process_html(html_type, id):
     return redirect(url_for("webscraping"))
 
 
+# Generate filenames for the cleaned HTMLs with the naming assistant
+@app.route("/generate_filenames", methods=["POST"])
+@login_required
+def generate_filenames():
+    try:
+        # Hämta ID:n från frontend
+        scraped_data_ids = request.json.get("scraped_data_ids", [])
+        if not scraped_data_ids:
+            return jsonify({"error": "No IDs provided"}), 400
+
+        # Hämta skrapad data från databasen
+        scraped_data = ScrapedContent.query.filter(
+            ScrapedContent.id.in_(scraped_data_ids)
+        ).all()
+        if not scraped_data:
+            return jsonify({"error": "No data found for provided IDs"}), 404
+
+        filenames = []
+
+        for item in scraped_data:
+            gpt_response = item.gpt_cleaned_html
+            if not gpt_response:
+                filenames.append("Unnamed.html")
+                continue
+
+            # Skicka GPT-cleaned HTML till naming-assistenten
+            naming_gpt_response = process_html_with_gpt(
+                gpt_response, assistant_id=naming_assistant_id
+            )
+
+            # Debug: Logga GPT-responsen
+            print(f"Naming GPT response for ID {item.id}: {naming_gpt_response}")
+
+            # Extrahera filnamnet från GPT-responsen
+            match = re.search(r"listing_name\s*=\s*(\S+)", naming_gpt_response)
+            if match:
+                listing_name = match.group(1).strip()
+                item.listing_name = listing_name  # Uppdatera databasen
+                filenames.append(f"{listing_name}.html")
+            else:
+                print(
+                    f"No match found for ID {item.id} in response: {naming_gpt_response}"
+                )
+                filenames.append("Unnamed.html")
+
+        # Commit till databasen
+        db.session.commit()
+        return jsonify({"filenames": filenames})
+
+    except Exception as e:
+        # Debug: Logga felet
+        print(f"Error in generate_filenames: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 ### Uppdaterad save_file-route för nedladdning ###
 @app.route("/save_file", methods=["GET"])
 @login_required
@@ -286,57 +348,41 @@ def save_file():
     html_type = request.args.get("html_type")
     data_id = request.args.get("id")
 
-    # Validera att både html_type och id är närvarande
-    if not html_type or not data_id:
-        flash("Missing 'html_type' or 'id' parameters.", "danger")
-        return redirect(url_for("webscraping"))
-
-    # Tillåtna html_type värden
-    allowed_html_types = ["raw", "pretty", "filtered", "gpt_cleaned"]
-    if html_type not in allowed_html_types:
-        flash("Invalid 'html_type' parameter.", "danger")
+    # Validera parametrar och html_type
+    if (
+        not html_type
+        or not data_id
+        or html_type not in ["raw", "pretty", "filtered", "gpt_cleaned"]
+    ):
+        flash("Invalid or missing parameters.", "danger")
         return redirect(url_for("webscraping"))
 
     # Hämta den sparade datan baserat på data_id
-    data = ScrapedContent.query.get(data_id)
+    data = db.session.get(ScrapedContent, data_id)
     if not data:
         flash("Data not found.", "danger")
         return redirect(url_for("webscraping"))
 
     # Välj rätt HTML-innehåll baserat på html_type
-    if html_type == "raw":
-        html_content = data.raw_html
-        filename = f"raw_html_{data.id}.html"
-    elif html_type == "pretty":
-        html_content = data.pretty_html
-        filename = f"pretty_html_{data.id}.html"
-    elif html_type == "filtered":
-        html_content = data.filtered_html
-        filename = f"filtered_html_{data.id}.html"
-    elif html_type == "gpt_cleaned":
-        if not data.gpt_cleaned_html:
-            flash("GPT-cleaned HTML not available.", "danger")
-            return redirect(url_for("webscraping"))
-        html_content = data.gpt_cleaned_html
-        filename = f"gpt_cleaned_html_{data.id}.html"
-    else:
-        flash("Invalid 'html_type' parameter.", "danger")
+    html_content = getattr(data, f"{html_type}_html", None)
+    if not html_content:
+        flash(f"{html_type.capitalize()} HTML not available.", "danger")
         return redirect(url_for("webscraping"))
 
-    # Logga nedladdningsåtgärden
-    logging.info(f"User {g.user.id} downloaded {html_type} HTML for content {data_id}.")
+    # Kontrollera och använd listing_name
+    if not data.listing_name:
+        flash("No filename generated for this entry.", "danger")
+        return redirect(url_for("webscraping"))
 
-    # Skicka fil som nedladdning
     try:
-        file_stream = io.BytesIO(html_content.encode("utf-8"))
-        return send_file(
-            file_stream,
-            mimetype="text/html",
-            as_attachment=True,
-            download_name=filename,
+        # Spara filen med rätt namn och returnera den
+        file_path = save_html_to_file(
+            html_content, html_type, data_id, listing_name=data.listing_name
         )
+        flash(f"File saved successfully as {data.listing_name}.html", "success")
+        return send_file(file_path, as_attachment=True)
     except Exception as e:
-        flash(f"An error occurred while sending the file: {str(e)}", "danger")
+        flash(f"An error occurred while saving the file: {str(e)}", "danger")
         return redirect(url_for("webscraping"))
 
 

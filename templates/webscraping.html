@@ -177,8 +177,18 @@
                                                     </li>
                                                     {% endif %}
                                                 </ul>
-                                            </div>
 
+                                            </div>
+                                            <!-- Generate Filename Button -->
+                                            {% if data.gpt_cleaned_html %}
+                                            <button type="button" class="btn btn-secondary btn-sm generate-filename-btn"
+                                                data-id="{{ data.id }}">
+                                                Generate Filename
+                                            </button>
+                                            <ul id="filename-list-{{ data.id }}">
+                                                <!-- Dynamically generated filename will appear here -->
+                                            </ul>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -229,6 +239,36 @@
 
                 modalTitle.textContent = title;
                 modalContent.textContent = content;
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Hantera klick på Generate Filename-knappar
+            const buttons = document.querySelectorAll('.generate-filename-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    fetch('/generate_filenames', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scraped_data_ids: [id] })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            const filenameList = document.getElementById(`filename-list-${id}`);
+                            filenameList.innerHTML = "";  // Rensa tidigare filnamn
+                            if (data.filenames) {
+                                data.filenames.forEach(filename => {
+                                    const listItem = document.createElement("li");
+                                    listItem.textContent = filename;
+                                    filenameList.appendChild(listItem);
+                                });
+                            } else if (data.error) {
+                                alert("Error generating filenames: " + data.error);
+                            }
+                        })
+                        .catch(error => console.error("Error:", error));
+                });
             });
         });
     </script>

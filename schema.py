@@ -28,8 +28,10 @@ class User(db.Model):
 
 class ScrapedContent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    listing_name = db.Column(db.String(255), nullable=True)
     raw_html = db.Column(db.Text, nullable=False)
     pretty_html = db.Column(db.Text, nullable=False)
     filtered_html = db.Column(db.Text)
     gpt_cleaned_html = db.Column(db.Text)
     scraped_url = db.Column(db.String(255), nullable=False)
+    scraped_date = db.Column(db.DateTime)
