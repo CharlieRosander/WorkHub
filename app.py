@@ -45,6 +45,7 @@ response_assistant_id = os.getenv("RESPONSE_ASSISTANT_ID")
 compose_assistant_id = os.getenv("COMPOSE_ASSISTANT_ID")
 webscrape_assistant_id = os.getenv("WEBSCRAPE_ASSISTANT_ID")
 naming_assistant_id = os.getenv("NAMING_ASSISTANT_ID")
+save_path = os.getenv("SAVE_PATH")
 
 # Register Google OAuth blueprint
 app.register_blueprint(google_bp)
@@ -376,7 +377,7 @@ def save_file():
     try:
         # Spara filen med rätt namn och returnera den
         file_path = save_html_to_file(
-            html_content, html_type, data_id, listing_name=safe_filename
+            html_content, html_type, data_id, listing_name=safe_filename, save_path=save_path
         )
         flash(f"File saved successfully as {safe_filename}.html", "success")
         return send_file(file_path, as_attachment=True)

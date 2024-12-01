@@ -30,16 +30,6 @@ def scrape_website(url):
 
 
 def save_html_to_file(html_content, html_type, id, listing_name=None, save_path=None):
-    """
-    Sparar HTML-innehåll till en fil och returnerar filens sökväg.
-
-    :param html_content: Innehållet som ska sparas.
-    :param html_type: Typ av HTML (raw, pretty, filtered, gpt_cleaned).
-    :param id: ID för det relaterade innehållet.
-    :param listing_name: Namnet som ska användas för filnamnet (från GPT eller URL).
-    :param save_path: Anpassad sökväg för filen (valfritt).
-    :return: Filens sökväg.
-    """
     try:
         # Om inget save_path ges, skapa en säker filväg i 'downloads'
         os.makedirs("downloads", exist_ok=True)
@@ -53,7 +43,7 @@ def save_html_to_file(html_content, html_type, id, listing_name=None, save_path=
         # Fullständig sökväg för filen
         file_path = os.path.join("downloads", filename)
 
-        # Skriv HTML-innehållet till filen
+        # Skriv HTML-innehållet till filen, save-path är satt men används inte här ännu, persmissions needed etc
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(html_content)
 
