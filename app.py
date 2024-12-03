@@ -38,7 +38,6 @@ from dotenv import load_dotenv
 
 load_dotenv(".env")
 database_path = os.getenv("DATABASE_PATH")
-print(database_path)
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.getenv('DATABASE_PATH')}"
