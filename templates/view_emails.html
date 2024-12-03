@@ -3,76 +3,177 @@
 <title>View Emails</title>
 
 <div class="container mt-5">
-    <h2 class="mb-4">My Emails</h2>
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th scope="col">From</th>
-                <th scope="col">Subject</th>
-                <th scope="col">Snippet</th>
-                <th scope="col">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for email in emails %}
-            <tr>
-                <td><strong>{{ email.from }}</strong></td>
-                <td>{{ email.subject }}</td>
-                <td>{{ email.snippet }}</td>
-                <td class="d-flex justify-content-end">
-                    <a href="{{ url_for('send_email', email_id=email.id, subject='RE: ' ~ email.subject) }}"
-                        class="btn btn-outline-secondary btn-sm mx-1">Reply</a>
-                    <button class="btn btn-outline-primary btn-sm mx-1"
-                        onclick="toggleEmail('{{ email.id }}')">View</button>
-                    <form action="{{ url_for('process_email_for_gpt', email_id=email.id) }}" method="post" class="mx-1">
-                        <button class="btn btn-outline-dark btn-sm" type="submit">GPT</button>
-                    </form>
-                </td>
-            </tr>
-            <!-- Full email body hidden by default -->
-            <tr id="email-{{ email.id }}" style="display:none;">
-                <td colspan="4">
-                    <div class="p-3" style="border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
-                        <!-- Placeholder for the email content -->
-                        <div class="email-body-content" style="white-space: pre-wrap;">
-                        </div>
-                        <div class="d-flex justify-content-end">
-                            <button class="btn btn-secondary mt-3"
-                                onclick="toggleEmail('{{ email.id }}')">Close</button>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0">My Emails</h2>
+        <div class="email-stats text-muted">
+            <small>{{ total_count }} emails total</small>
+        </div>
+    </div>
+
+    <div class="email-list">
+        {% for email in emails %}
+        <div class="email-item card mb-3 shadow-sm">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <div class="from-address">
+                            <i class="fas fa-user-circle me-2"></i>
+                            <strong>{{ email.from }}</strong>
                         </div>
                     </div>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4">No emails to display.</td>
-            </tr>
+                    <div class="col-md-7">
+                        <h5 class="card-title mb-1">{{ email.subject }}</h5>
+                        <p class="card-text text-muted small mb-1">{{ email.snippet }}</p>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('send_email', email_id=email.id, subject='RE: ' ~ email.subject) }}"
+                                class="btn btn-outline-primary btn-sm" title="Reply">
+                                <i class="fas fa-reply"></i>
+                            </a>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="toggleEmail('{{ email.id }}')"
+                                title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <form action="{{ url_for('process_email_for_gpt', email_id=email.id) }}" method="post"
+                                class="d-inline">
+                                <button class="btn btn-outline-dark btn-sm" type="submit" title="Process with GPT">
+                                    <i class="fas fa-robot"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="email-{{ email.id }}" class="email-content">
+                <div class="card-body border-top">
+                    <div class="email-body-content">
+                        <div class="loading-spinner text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn btn-secondary" onclick="toggleEmail('{{ email.id }}')">
+                            <i class="fas fa-times me-1"></i> Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No emails to display</h5>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if total_pages > 1 %}
+    <nav aria-label="Email navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('view_emails', page=page-1) if page > 1 else '#' }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ p }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('view_emails', page=p) }}">{{ p }}</a>
+                    </li>
+                {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
+            
+            <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('view_emails', page=page+1) if page < total_pages else '#' }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
 </div>
+
+<style>
+    .email-item {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .email-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    }
+
+    .from-address {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .card-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .email-content {
+        display: none;
+    }
+
+    .email-content.show {
+        display: block;
+    }
+
+    .loading-spinner {
+        padding: 2rem;
+    }
+
+    .btn-sm {
+        padding: .25rem .5rem;
+        font-size: .875rem;
+        border-radius: .2rem;
+    }
+</style>
 
 <script>
     function toggleEmail(emailId) {
-        var emailRow = document.getElementById("email-" + emailId);
-        if (emailRow.style.display === "none" || emailRow.style.display === "") {
-            emailRow.style.display = "table-row";
-            loadFullEmail(emailId);
+        var emailContent = document.getElementById("email-" + emailId);
+        if (emailContent.classList.contains("show")) {
+            emailContent.classList.remove("show");
         } else {
-            emailRow.style.display = "none";
+            document.querySelectorAll('.email-content').forEach(content => {
+                if (content.id !== "email-" + emailId) {
+                    content.classList.remove("show");
+                }
+            });
+
+            emailContent.classList.add("show");
+            loadFullEmail(emailId);
         }
     }
 
     function loadFullEmail(emailId) {
+        const contentDiv = document.querySelector(`#email-${emailId} .email-body-content`);
+
         fetch(`/email_body/${emailId}`)
             .then(response => response.text())
             .then(data => {
-                var emailRow = document.getElementById("email-" + emailId);
-                emailRow.querySelector('.email-body-content').innerHTML = data;
+                contentDiv.innerHTML = data;
             })
             .catch(error => {
-                var emailRow = document.getElementById("email-" + emailId);
-                emailRow.querySelector('.email-body-content').innerHTML = "<p>Error loading email content.</p>";
+                contentDiv.innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error loading email content. Please try again.
+                    </div>`;
             });
     }
 </script>

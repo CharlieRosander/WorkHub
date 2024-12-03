@@ -41,31 +41,36 @@ def send_gmail_email(to, subject, message_text):
         return handle_error(f"Failed to send email: {str(e)}")
 
 
-def get_gmail_emails():
-    """Fetches the list of received emails from Gmail."""
+def get_gmail_emails(page=1, per_page=10):
+    """Fetches the list of received emails from Gmail with pagination."""
     service = get_gmail_service()
     if not service:
-        return []
+        return [], 0
 
     try:
-        # Fetch the list of received messages (only from inbox) using the Gmail API
+        # Calculate start index for pagination
+        start_index = (page - 1) * per_page
+
+        # Fetch total count first
+        results = service.users().messages().list(userId="me", labelIds=["INBOX"]).execute()
+        total_messages = results.get("resultSizeEstimate", 0)
+
+        # Fetch paginated messages
         results = (
             service.users()
             .messages()
-            .list(userId="me", labelIds=["INBOX"], maxResults=20)
+            .list(userId="me", labelIds=["INBOX"], maxResults=per_page, pageToken=results.get("nextPageToken") if start_index > 0 else None)
             .execute()
         )
         messages = results.get("messages", [])
 
         if not messages:
             flash("No messages found.")
-            return []
+            return [], 0
 
         email_list = []
         for message in messages:
-            msg = (
-                service.users().messages().get(userId="me", id=message["id"]).execute()
-            )
+            msg = service.users().messages().get(userId="me", id=message["id"]).execute()
 
             # Extract headers and provide defaults if missing
             headers = msg["payload"].get("headers", [])
@@ -88,10 +93,10 @@ def get_gmail_emails():
                 }
             )
 
-        return email_list
+        return email_list, total_messages
     except Exception as e:
         handle_error(f"Failed to fetch emails: {str(e)}")
-        return []
+        return [], 0
 
 
 def get_gmail_email_by_id(email_id):

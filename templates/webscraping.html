@@ -1,278 +1,302 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<div class="container py-5 h-100">
-    <div class="row d-flex justify-content-center h-100">
-        <!-- Website Scraping -->
-        <div class="col mt-4">
-            <div class="card rounded-3">
-                <div class="card-body p-4 p-md-5">
-                    <h3 class="mb-4 pb-2 pb-md-0 px-md-2">Website Scraping</h3>
-                    <form class="px-md-2" method="post" action="{{ url_for('scrape_job_listing') }}">
-                        <div class="form-outline mb-4">
-                            <label class="form-label" for="scrape_link">Website to Scrape</label>
-                            <input type="text" id="scrape_link" name="scrape_link" class="form-control" required />
-                        </div>
-                        <div class="form-outline mb-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                Scrape Website
-                            </button>
-                        </div>
-                    </form>
+<div class="webscraping-container py-5">
+    <!-- Website Scraping Form -->
+    <div class="scraping-form">
+        <h3 class="mb-4">Website Scraping</h3>
+        <form method="post" action="{{ url_for('scrape_job_listing') }}">
+            <div class="form-group mb-4">
+                <label class="form-label" for="scrape_link">Website to Scrape</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-link"></i>
+                    </span>
+                    <input type="url" id="scrape_link" name="scrape_link" class="form-control"
+                        placeholder="Enter website URL" required />
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-spider me-2"></i>
+                    Scrape Website
+                </button>
+            </div>
+        </form>
+    </div>
 
-                    <!-- Table of Previously Scraped Data -->
-                    {% if scraped_data %}
-                    <div class="mt-4">
-                        <h5>Previously Scraped Data</h5>
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Scraped URL</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for data in scraped_data %}
-                                <tr>
-                                    <td>{{ loop.index }}</td>
-                                    <td>{{ data.scraped_url }}</td>
-                                    <td class="table-actions">
-                                        <div class="d-flex flex-column">
-
-                                            <!-- View Button with Dropdown -->
-                                            <div class="dropdown mb-2">
-                                                <button class="btn btn-warning btn-sm w-100 dropdown-toggle"
-                                                    type="button" id="viewDropdown{{ data.id }}"
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="bi bi-eye"></i> View
+    <!-- Previously Scraped Data -->
+    {% if scraped_data %}
+    <div class="scraping-table">
+        <h4 class="p-3 m-0 border-bottom bg-light">Previously Scraped Data</h4>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">#</th>
+                        <th style="width: 65%">Scraped URL</th>
+                        <th style="width: 30%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in scraped_data %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="text-break">
+                            <a href="{{ data.scraped_url }}" target="_blank" class="text-decoration-none">
+                                {{ data.scraped_url }}
+                            </a>
+                            {% if data.gpt_cleaned_html %}
+                            <div id="generated-name-{{ data.id }}" class="generated-name-display mt-2 d-none">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-file-signature text-muted me-2"></i>
+                                    <span class="generated-name-text"></span>
+                                    <button class="btn btn-link btn-sm ms-2 copy-name-btn p-0" title="Copy name">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons-container">
+                                <div class="action-row">
+                                    <!-- View Options -->
+                                    <div class="dropdown view-action">
+                                        <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                                            id="viewDropdown{{ data.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-eye"></i>
+                                            <span>View HTML</span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="viewDropdown{{ data.id }}">
+                                            <li>
+                                                <button class="dropdown-item view-html-btn" data-bs-toggle="modal"
+                                                    data-bs-target="#dynamicViewModal" data-title="Raw HTML"
+                                                    data-content="{{ data.raw_html | e }}">
+                                                    <i class="fas fa-code"></i>
+                                                    Raw HTML
                                                 </button>
-                                                <ul class="dropdown-menu" aria-labelledby="viewDropdown{{ data.id }}">
-                                                    <li>
-                                                        <button class="dropdown-item view-html-btn"
-                                                            data-bs-toggle="modal" data-bs-target="#dynamicViewModal"
-                                                            data-title="Raw HTML for {{ data.scraped_url }}"
-                                                            data-content="{{ data.raw_html | e }}"
-                                                            data-bs-toggle="tooltip" title="View Raw HTML">
-                                                            <i class="bi bi-file-earmark-code"></i> Raw HTML
-                                                        </button>
-                                                    </li>
-                                                    <li>
-                                                        <button class="dropdown-item view-html-btn"
-                                                            data-bs-toggle="modal" data-bs-target="#dynamicViewModal"
-                                                            data-title="Pretty HTML for {{ data.scraped_url }}"
-                                                            data-content="{{ data.pretty_html | e }}"
-                                                            data-bs-toggle="tooltip" title="View Pretty HTML">
-                                                            <i class="bi bi-file-earmark-text"></i> Pretty HTML
-                                                        </button>
-                                                    </li>
-                                                    <li>
-                                                        <button class="dropdown-item view-html-btn"
-                                                            data-bs-toggle="modal" data-bs-target="#dynamicViewModal"
-                                                            data-title="Filtered HTML for {{ data.scraped_url }}"
-                                                            data-content="{{ data.filtered_html | e }}"
-                                                            data-bs-toggle="tooltip" title="View Filtered HTML">
-                                                            <i class="bi bi-file-earmark-richtext"></i> Filtered HTML
-                                                        </button>
-                                                    </li>
-                                                    {% if data.gpt_cleaned_html %}
-                                                    <li>
-                                                        <button class="dropdown-item view-html-btn"
-                                                            data-bs-toggle="modal" data-bs-target="#dynamicViewModal"
-                                                            data-title="GPT-cleaned HTML for {{ data.scraped_url }}"
-                                                            data-content="{{ data.gpt_cleaned_html | e }}"
-                                                            data-bs-toggle="tooltip" title="View GPT-cleaned HTML">
-                                                            <i class="bi bi-file-earmark-check"></i> GPT-cleaned HTML
-                                                        </button>
-                                                    </li>
-                                                    {% endif %}
-                                                </ul>
-                                            </div>
-
-                                            <!-- Send Button with Dropdown -->
-                                            <div class="dropdown mb-2">
-                                                <button class="btn btn-success btn-sm w-100 dropdown-toggle"
-                                                    type="button" id="sendDropdown{{ data.id }}"
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="bi bi-send"></i> Send
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item view-html-btn" data-bs-toggle="modal"
+                                                    data-bs-target="#dynamicViewModal" data-title="Pretty HTML"
+                                                    data-content="{{ data.pretty_html | e }}">
+                                                    <i class="fas fa-file-code"></i>
+                                                    Pretty HTML
                                                 </button>
-                                                <ul class="dropdown-menu" aria-labelledby="sendDropdown{{ data.id }}">
-                                                    <li>
-                                                        <form method="post"
-                                                            action="{{ url_for('process_html', html_type='raw', id=data.id) }}">
-                                                            <button type="submit" class="dropdown-item">
-                                                                <i class="bi bi-send-check"></i> Send Raw to GPT
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    <li>
-                                                        <form method="post"
-                                                            action="{{ url_for('process_html', html_type='pretty', id=data.id) }}">
-                                                            <button type="submit" class="dropdown-item">
-                                                                <i class="bi bi-send-plus"></i> Send Pretty to GPT
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    <li>
-                                                        <form method="post"
-                                                            action="{{ url_for('process_html', html_type='filtered', id=data.id) }}">
-                                                            <button type="submit" class="dropdown-item">
-                                                                <i class="bi bi-send-dash"></i> Send Filtered to GPT
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    {# Removed the "Send GPT-cleaned to GPT" option #}
-                                                    {# {% if data.gpt_cleaned_html %}
-                                                    <li>
-                                                        <form method="post"
-                                                            action="{{ url_for('process_html', html_type='gpt_cleaned', id=data.id) }}">
-                                                            <button type="submit" class="dropdown-item">
-                                                                <i class="bi bi-send-fill"></i> Send GPT-cleaned to GPT
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    {% endif %} #}
-                                                </ul>
-                                            </div>
-
-                                            <!-- Save Button with Dropdown -->
-                                            <div class="dropdown mb-2">
-                                                <button class="btn btn-primary btn-sm w-100 dropdown-toggle"
-                                                    type="button" id="saveDropdown{{ data.id }}"
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="bi bi-download"></i> Save Options
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item view-html-btn" data-bs-toggle="modal"
+                                                    data-bs-target="#dynamicViewModal" data-title="Filtered HTML"
+                                                    data-content="{{ data.filtered_html | e }}">
+                                                    <i class="fas fa-filter"></i>
+                                                    Filtered HTML
                                                 </button>
-                                                <ul class="dropdown-menu" aria-labelledby="saveDropdown{{ data.id }}">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ url_for('save_file', html_type='raw', id=data.id) }}"
-                                                            data-bs-toggle="tooltip" title="Download Raw HTML">
-                                                            <i class="bi bi-file-earmark-arrow-down"></i> Save Raw HTML
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ url_for('save_file', html_type='pretty', id=data.id) }}"
-                                                            data-bs-toggle="tooltip" title="Download Pretty HTML">
-                                                            <i class="bi bi-file-earmark-arrow-down-fill"></i> Save
-                                                            Pretty HTML
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ url_for('save_file', html_type='filtered', id=data.id) }}"
-                                                            data-bs-toggle="tooltip" title="Download Filtered HTML">
-                                                            <i class="bi bi-file-earmark-arrow-down"></i> Save Filtered
-                                                            HTML
-                                                        </a>
-                                                    </li>
-                                                    {% if data.gpt_cleaned_html %}
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ url_for('save_file', html_type='gpt_cleaned', id=data.id) }}"
-                                                            data-bs-toggle="tooltip" title="Download GPT-cleaned HTML">
-                                                            <i class="bi bi-file-earmark-arrow-down-fill"></i> Save
-                                                            GPT-cleaned HTML
-                                                        </a>
-                                                    </li>
-                                                    {% endif %}
-                                                </ul>
-
-                                            </div>
-                                            <!-- Generate Filename Button -->
+                                            </li>
                                             {% if data.gpt_cleaned_html %}
-                                            <button type="button" class="btn btn-secondary btn-sm generate-filename-btn"
-                                                data-id="{{ data.id }}">
-                                                Generate Filename
-                                            </button>
-                                            <ul id="filename-list-{{ data.id }}">
-                                                <!-- Dynamically generated filename will appear here -->
-                                            </ul>
+                                            <li>
+                                                <button class="dropdown-item view-html-btn" data-bs-toggle="modal"
+                                                    data-bs-target="#dynamicViewModal" data-title="GPT-cleaned HTML"
+                                                    data-content="{{ data.gpt_cleaned_html | e }}">
+                                                    <i class="fas fa-robot"></i>
+                                                    GPT-cleaned HTML
+                                                </button>
+                                            </li>
                                             {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Process Options -->
+                                    <div class="dropdown process-action">
+                                        <button class="btn btn-outline-success dropdown-toggle" type="button"
+                                            id="sendDropdown{{ data.id }}" data-bs-toggle="dropdown">
+                                            <i class="fas fa-paper-plane"></i>
+                                            <span>Process with GPT</span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <form method="post"
+                                                    action="{{ url_for('process_html', html_type='raw', id=data.id) }}">
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="fas fa-code"></i>
+                                                        Process Raw
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form method="post"
+                                                    action="{{ url_for('process_html', html_type='pretty', id=data.id) }}">
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="fas fa-file-code"></i>
+                                                        Process Pretty
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form method="post"
+                                                    action="{{ url_for('process_html', html_type='filtered', id=data.id) }}">
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="fas fa-filter"></i>
+                                                        Process Filtered
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="action-row">
+                                    <!-- Save Options -->
+                                    <div class="dropdown save-action">
+                                        <button class="btn btn-outline-info dropdown-toggle" type="button"
+                                            id="saveDropdown{{ data.id }}" data-bs-toggle="dropdown">
+                                            <i class="fas fa-download"></i>
+                                            <span>Save Content</span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item"
+                                                    href="{{ url_for('save_file', html_type='raw', id=data.id) }}">
+                                                    <i class="fas fa-file-download"></i>
+                                                    Raw HTML
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                    href="{{ url_for('save_file', html_type='pretty', id=data.id) }}">
+                                                    <i class="fas fa-file-code"></i>
+                                                    Pretty HTML
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                    href="{{ url_for('save_file', html_type='filtered', id=data.id) }}">
+                                                    <i class="fas fa-file-alt"></i>
+                                                    Filtered HTML
+                                                </a>
+                                            </li>
+                                            {% if data.gpt_cleaned_html %}
+                                            <li>
+                                                <a class="dropdown-item"
+                                                    href="{{ url_for('save_file', html_type='gpt_cleaned', id=data.id) }}">
+                                                    <i class="fas fa-robot"></i>
+                                                    GPT-cleaned HTML
+                                                </a>
+                                            </li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+
+                                    <!-- Generate Filename -->
+                                    {% if data.gpt_cleaned_html %}
+                                    <div class="filename-generator">
+                                        <button type="button" class="btn btn-outline-secondary generate-filename-btn"
+                                            data-id="{{ data.id }}">
+                                            <i class="fas fa-magic"></i>
+                                            <span>Generate Name</span>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-
-    <!-- Dynamisk Modal för Visning av HTML -->
-    <div class="modal fade" id="dynamicViewModal" tabindex="-1" aria-labelledby="dynamicViewModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="dynamicViewModalLabel">Content</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <pre id="dynamicViewModalContent"></pre>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- JavaScript för Dynamiska Modaler och Tooltips -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Initialisera Bootstrap Tooltips
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
-            })
-
-            // Dynamisk Modal för View
-            var dynamicViewModal = document.getElementById('dynamicViewModal');
-            dynamicViewModal.addEventListener('show.bs.modal', function (event) {
-                var button = event.relatedTarget;
-                var title = button.getAttribute('data-title');
-                var content = button.getAttribute('data-content');
-
-                var modalTitle = dynamicViewModal.querySelector('.modal-title');
-                var modalContent = dynamicViewModal.querySelector('#dynamicViewModalContent');
-
-                modalTitle.textContent = title;
-                modalContent.textContent = content;
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Hantera klick på Generate Filename-knappar
-            const buttons = document.querySelectorAll('.generate-filename-btn');
-            buttons.forEach(button => {
-                button.addEventListener('click', function () {
-                    const id = this.getAttribute('data-id');
-                    fetch('/generate_filenames', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ scraped_data_ids: [id] })
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            const filenameList = document.getElementById(`filename-list-${id}`);
-                            filenameList.innerHTML = "";  // Rensa tidigare filnamn
-                            if (data.filenames) {
-                                data.filenames.forEach(filename => {
-                                    const listItem = document.createElement("li");
-                                    listItem.textContent = filename;
-                                    filenameList.appendChild(listItem);
-                                });
-                            } else if (data.error) {
-                                alert("Error generating filenames: " + data.error);
-                            }
-                        })
-                        .catch(error => console.error("Error:", error));
-                });
-            });
-        });
-    </script>
-
+    {% endif %}
 </div>
+
+<!-- View Modal -->
+<div class="modal fade" id="dynamicViewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre><code></code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.view-html-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const modal = document.getElementById('dynamicViewModal');
+            const title = this.getAttribute('data-title');
+            const content = this.getAttribute('data-content');
+
+            modal.querySelector('.modal-title').textContent = title;
+            modal.querySelector('code').textContent = content;
+        });
+    });
+
+    // Generate Filename functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const generateButtons = document.querySelectorAll('.generate-filename-btn');
+        generateButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                const buttonSpan = this.querySelector('span');
+                const generatedNameDisplay = document.getElementById(`generated-name-${id}`);
+                const generatedNameText = generatedNameDisplay.querySelector('.generated-name-text');
+                const copyButton = generatedNameDisplay.querySelector('.copy-name-btn');
+
+                // Show loading state
+                button.disabled = true;
+                buttonSpan.textContent = 'Generating...';
+                button.querySelector('i').classList.add('fa-spin');
+
+                // Hide previous result if any
+                generatedNameDisplay.classList.add('d-none');
+
+                fetch('/generate_filenames', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scraped_data_ids: [id] })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.filenames && data.filenames.length > 0) {
+                            const filename = data.filenames[0]; // Vi tar bara första namnet
+                            generatedNameText.textContent = filename;
+                            generatedNameDisplay.classList.remove('d-none');
+
+                            // Setup copy button
+                            copyButton.onclick = function (e) {
+                                e.preventDefault();
+                                navigator.clipboard.writeText(filename).then(() => {
+                                    const originalIcon = copyButton.innerHTML;
+                                    copyButton.innerHTML = '<i class="fas fa-check text-success"></i>';
+                                    setTimeout(() => {
+                                        copyButton.innerHTML = originalIcon;
+                                    }, 1500);
+                                });
+                            };
+                        } else if (data.error) {
+                            generatedNameText.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle"></i> ${data.error}</span>`;
+                            generatedNameDisplay.classList.remove('d-none');
+                        }
+                    })
+                    .catch(error => {
+                        generatedNameText.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle"></i> Error generating name</span>`;
+                        generatedNameDisplay.classList.remove('d-none');
+                        console.error("Error:", error);
+                    })
+                    .finally(() => {
+                        // Reset button state
+                        button.disabled = false;
+                        buttonSpan.textContent = 'Generate Name';
+                        button.querySelector('i').classList.remove('fa-spin');
+                    });
+            });
+        });
+    });
+</script>
 
 {% endblock %}

@@ -5,37 +5,18 @@ from schema import db, InquiredCompany
 from flask import session
 from webscrape_service import scrape_website
 from schema import ScrapedContent
+import logging
 
 
 def register_company():
     if request.method == "POST":
         if "scrape_link" in request.form:
-            url = request.form.get("scrape_link")
-            if not url:
-                flash("Please provide a valid URL.")
-            else:
-                scrape_result = scrape_website(url)
-                if "error" in scrape_result:
-                    flash(scrape_result["error"])
-                else:
-                    # Spara resultatet i databasen
-                    try:
-                        scraped_content = ScrapedContent(
-                            raw_html=scrape_result.get("raw_html"),
-                            pretty_html=scrape_result.get("pretty_html"),
-                            filtered_html=scrape_result.get("filtered_html"),
-                            scraped_url=url,
-                        )
-                        db.session.add(scraped_content)
-                        db.session.commit()
-                        flash("Website scraped and saved successfully!")
-                    except SQLAlchemyError as e:
-                        db.session.rollback()
-                        flash(f"An error occurred while saving: {str(e)}")
-            return redirect(url_for("register_company_route"))
+            # Redirect scraping requests to the dedicated scraping endpoint
+            return redirect(url_for("scrape_job_listing"))
 
         # Hantera företagsregistrering (befintlig logik)
         try:
+            logging.info("Attempting to register new company")
             company_data = {
                 "name": request.form["name"],
                 "date_applied": (
@@ -50,13 +31,23 @@ def register_company():
                 "phone": request.form["phone"],
                 "link": request.form["link"],
             }
+            logging.info(f"Company data prepared: {company_data}")
+
             company = InquiredCompany(**company_data)
             db.session.add(company)
             db.session.commit()
-            flash("Company registered successfully!")
-        except SQLAlchemyError:
+            logging.info(f"Successfully registered company: {company_data['name']}")
+            flash("Company registered successfully!", "success")
+        except SQLAlchemyError as e:
             db.session.rollback()
-            flash("An error occurred while registering the company.")
+            logging.error(f"Database error while registering company: {str(e)}")
+            flash(
+                f"An error occurred while registering the company: {str(e)}", "danger"
+            )
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Unexpected error while registering company: {str(e)}")
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
         return redirect(url_for("register_company_route"))
 
     # Skicka data till frontend (om tillämpligt)

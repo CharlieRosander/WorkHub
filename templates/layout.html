@@ -18,13 +18,16 @@
     <header id="header">
         <!-- Navbar -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <div class="container-fluid">
+            <div class="container-fluid px-4">
                 <div class="row w-100 align-items-center">
-                    <div class="col-3"></div>
+                    <!-- Left section - empty -->
+                    <div class="col-3">
+                    </div>
 
                     <!-- Center Column with Title -->
                     <div class="col-6 text-center">
                         <a class="navbar-brand mx-auto" href="{{ url_for('index') }}">
+                            <i class="fas fa-briefcase brand-icon"></i>
                             <h1>Workhub</h1>
                         </a>
                     </div>
@@ -33,14 +36,25 @@
                     <div class="col-3 d-flex justify-content-end">
                         {% if 'user_id' in session %}
                         <div class="dropdown">
-                            <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown"
-                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn btn-outline-light dropdown-toggle user-dropdown" type="button"
+                                id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle me-2"></i>
                                 {{ current_user.email }}
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="{{ url_for('reset') }}">Reset user & Google token</a>
+                            <ul class="dropdown-menu dropdown-menu-end wide-dropdown" aria-labelledby="userDropdown">
+                                <li>
+                                    <a class="dropdown-item py-2" href="{{ url_for('reset') }}">
+                                        <i class="fas fa-sync-alt me-2"></i> Reset user & Google token
+                                    </a>
                                 </li>
-                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log out</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 text-danger" href="{{ url_for('logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2"></i> Log out
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                         {% endif %}
@@ -54,12 +68,18 @@
             <div class="container-fluid">
                 <div class="row w-100">
                     <div class="col d-flex justify-content-center">
-                        <a class="btn btn-secondary mx-2" href="{{ url_for('register_company_route') }}">Register
-                            job</a>
-                        <a class="btn btn-secondary mx-2" href="{{ url_for('webscraping') }}">Web Scraping</a>
-                        <a class="btn btn-secondary mx-2" href="{{ url_for('send_email') }}">Send Email</a>
-                        <a class="btn btn-secondary mx-2" href="{{ url_for('view_emails') }}">View emails</a>
-                        <!-- Removed "Reset user & google token" from here -->
+                        <a class="nav-link nav-btn" href="{{ url_for('register_company_route') }}">
+                            <i class="fas fa-building me-1"></i> Register job
+                        </a>
+                        <a class="nav-link nav-btn" href="{{ url_for('webscraping') }}">
+                            <i class="fas fa-spider me-1"></i> Web Scraping
+                        </a>
+                        <a class="nav-link nav-btn" href="{{ url_for('send_email') }}">
+                            <i class="fas fa-envelope me-1"></i> Send Email
+                        </a>
+                        <a class="nav-link nav-btn" href="{{ url_for('view_emails') }}">
+                            <i class="fas fa-inbox me-1"></i> View emails
+                        </a>
                     </div>
                 </div>
             </div>

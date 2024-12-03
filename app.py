@@ -34,7 +34,11 @@ from gpt_service import send_gpt_prompt, process_html_with_gpt
 import io
 import logging
 import re
+from dotenv import load_dotenv
 
+load_dotenv(".env")
+database_path = os.getenv("DATABASE_PATH")
+print(database_path)
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.getenv('DATABASE_PATH')}"
@@ -45,6 +49,7 @@ response_assistant_id = os.getenv("RESPONSE_ASSISTANT_ID")
 compose_assistant_id = os.getenv("COMPOSE_ASSISTANT_ID")
 webscrape_assistant_id = os.getenv("WEBSCRAPE_ASSISTANT_ID")
 naming_assistant_id = os.getenv("NAMING_ASSISTANT_ID")
+autofill_assistant_id = os.getenv("AUTOFILL_ASSISTANT_ID")
 save_path = os.getenv("SAVE_PATH")
 
 # Register Google OAuth blueprint
@@ -56,6 +61,14 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]",
 )
+
+
+# Add custom Jinja2 test for current month
+@app.template_test("month_is_current")
+def is_current_month(date):
+    if not date:
+        return False
+    return date.month == datetime.now().month and date.year == datetime.now().year
 
 
 @app.route("/")
@@ -114,11 +127,18 @@ def oauth_callback():
 @login_required
 def send_email():
     if request.method == "POST":
-        if send_gmail_email(
-            request.form["to"], request.form["subject"], request.form["message"]
-        ):
-            flash("Email sent successfully!", "success")
-        return redirect(url_for("view_emails"))
+        try:
+            success = send_gmail_email(
+                request.form["to"], request.form["subject"], request.form["message"]
+            )
+            if success:
+                flash("Email sent successfully!", "success")
+            else:
+                flash("Failed to send email", "error")
+            return redirect(url_for("view_emails"))
+        except Exception as e:
+            flash(f"Error: {str(e)}", "error")
+            return redirect(url_for("view_emails"))
 
     # Use the prepare_email_data function to get data for the template
     email_data = prepare_email_data(
@@ -132,8 +152,22 @@ def send_email():
 @app.route("/view_emails")
 @login_required
 def view_emails():
-    emails = get_gmail_emails()
-    return render_template("view_emails.html", emails=emails)
+    try:
+        page = request.args.get("page", 1, type=int)
+        per_page = 10  # Number of emails per page
+        emails, total_count = get_gmail_emails(page=page, per_page=per_page)
+        total_pages = (total_count + per_page - 1) // per_page  # Calculate total pages
+
+        return render_template(
+            "view_emails.html",
+            emails=emails,
+            page=page,
+            total_pages=total_pages,
+            total_count=total_count,
+        )
+    except Exception as e:
+        flash(f"Error loading emails: {str(e)}", "danger")
+        return redirect(url_for("index"))
 
 
 @app.route("/email_body/<email_id>")
@@ -174,42 +208,53 @@ def process_email_for_gpt(email_id):
 @app.route("/regenerate_gpt_response", methods=["POST"])
 @login_required
 def regenerate_gpt_response():
-    email_body = request.form.get("email_body", "")
-    subject = request.form.get("subject", "")
-    to = request.form.get("to", "")
-    message = request.form.get("message", "")
+    try:
+        email_body = request.form.get("email_body", "")
+        subject = request.form.get("subject", "")
+        to = request.form.get("to", "")
 
-    comment = "Please regenerate the response and provide a different draft."
-    gpt_request = f"{email_body}\n\n{comment}"
+        comment = "Please regenerate the response and provide a different draft."
+        gpt_request = f"{email_body}\n\n{comment}"
 
-    # Skickar Emailet till Compose-assistenten för att generera ett nytt svar
-    gpt_response = send_gpt_prompt(gpt_request, assistant_id=compose_assistant_id)
-    logging.info(f"Regenerated GPT response: {gpt_response}")
+        # Send to Compose-assistant for new response
+        gpt_response = send_gpt_prompt(gpt_request, assistant_id=compose_assistant_id)
 
-    # Bevara befintliga data och rendera formuläret med det nya GPT-svaret
-    email_data = {
-        "email": {"from": to, "subject": subject, "body": email_body},
-        "subject": subject,
-        "gpt_response": gpt_response,
-    }
-    return render_template("send_email.html", **email_data)
+        # Extract subject if present
+        subject_match = re.search(r"{Subject:\s*(.*?)}", gpt_response)
+        if subject_match:
+            subject = subject_match.group(1).strip()
+            gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
+
+        return jsonify({"response": gpt_response, "subject": subject}), 200
+    except Exception as e:
+        return jsonify({"message": f"Error: {str(e)}"}), 500
 
 
 ### This route is the "Compose" type of the GPT call
 @app.route("/generate_gpt_from_link", methods=["POST"])
 @login_required
 def generate_gpt_from_link():
-    source_content = request.form.get("source_content", "")
-    additional_instructions = request.form.get("additional_instructions", "")
+    try:
+        source_content = request.form.get("source_content", "")
+        additional_instructions = request.form.get("additional_instructions", "")
 
-    gpt_input = f"Source Content:\n{source_content}\n\nAdditional Instructions:\n{additional_instructions}"
+        # Combine content and instructions for GPT
+        prompt = f"Source Content:\n{source_content}\n\nInstructions:\n{additional_instructions}"
 
-    gpt_response = send_gpt_prompt(gpt_input, assistant_id=compose_assistant_id)
-    logging.info(f"GPT compose response: {gpt_response}")
+        # Generate response using compose assistant
+        gpt_response = send_gpt_prompt(prompt, assistant_id=compose_assistant_id)
 
-    email_data = prepare_email_data(gpt_response=gpt_response)
+        # Extract subject if present
+        subject_match = re.search(r"{Subject:\s*(.*?)}", gpt_response)
+        if subject_match:
+            subject = subject_match.group(1).strip()
+            gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
+        else:
+            subject = ""
 
-    return render_template("send_email.html", **email_data)
+        return jsonify({"response": gpt_response, "subject": subject}), 200
+    except Exception as e:
+        return jsonify({"message": f"Error: {str(e)}"}), 500
 
 
 # Webscrape link using beautifulsoup. Save the raw, pretty and filtered html to the database
@@ -228,6 +273,7 @@ def scrape_job_listing():
 
     # Spara skrapad data i databasen
     try:
+        logging.info(f"Attempting to save scraped content for URL: {url}")
         new_scraped_content = ScrapedContent(
             raw_html=scrape_result.get("raw_html"),
             pretty_html=scrape_result.get("pretty_html"),
@@ -238,9 +284,11 @@ def scrape_job_listing():
 
         db.session.add(new_scraped_content)
         db.session.commit()
+        logging.info("Successfully saved scraped content to database")
         flash("Website scraped and data saved successfully!", "success")
     except SQLAlchemyError as e:
         db.session.rollback()
+        logging.error(f"Database error while saving scraped content: {str(e)}")
         flash(f"An error occurred while saving scraped data: {str(e)}", "danger")
         return redirect(url_for("webscraping"))
 
@@ -377,7 +425,11 @@ def save_file():
     try:
         # Spara filen med rätt namn och returnera den
         file_path = save_html_to_file(
-            html_content, html_type, data_id, listing_name=safe_filename, save_path=save_path
+            html_content,
+            html_type,
+            data_id,
+            listing_name=safe_filename,
+            save_path=save_path,
         )
         flash(f"File saved successfully as {safe_filename}.html", "success")
         return send_file(file_path, as_attachment=True)
@@ -412,7 +464,13 @@ def webscraping():
 @app.route("/register_company", methods=["GET", "POST"])
 @login_required
 def register_company_route():
-    return register_company()
+    if request.method == "POST":
+        return register_company()
+    today = datetime.now().strftime("%Y-%m-%d")
+    scraped_data = ScrapedContent.query.all()
+    return render_template(
+        "register_company.html", scraped_data=scraped_data, today=today
+    )
 
 
 @app.route("/delete_company/<int:id>", methods=["POST"])
@@ -425,6 +483,53 @@ def delete_company_route(id):
 @login_required
 def edit_company_route(id):
     return edit_company(id)
+
+
+@app.route("/autofill_company", methods=["POST"])
+@login_required
+def autofill_company():
+    try:
+        data_id = request.json.get("data_id")
+        if not data_id:
+            return jsonify({"error": "No data ID provided"}), 400
+
+        # Get the scraped content
+        scraped_content = ScrapedContent.query.get(data_id)
+        if not scraped_content or not scraped_content.gpt_cleaned_html:
+            return jsonify({"error": "No cleaned HTML data found"}), 404
+
+        # Use the compose assistant to extract company information
+        prompt = f"""
+        Extract company information from the job listing HTML below.
+        Link: "{scraped_content.scraped_url}"
+        HTML Content:{scraped_content.gpt_cleaned_html}
+        """
+
+        # Get response from GPT
+        gpt_response = send_gpt_prompt(prompt, assistant_id=autofill_assistant_id)
+
+        # Try to clean up the response if needed
+        gpt_response = gpt_response.strip()
+        if not gpt_response.startswith("{"):
+            # Find the first { and last }
+            start = gpt_response.find("{")
+            end = gpt_response.rfind("}") + 1
+            if start >= 0 and end > start:
+                gpt_response = gpt_response[start:end]
+            else:
+                raise ValueError("GPT response does not contain valid JSON")
+
+        # Validate JSON
+        import json
+
+        json.loads(gpt_response)  # This will raise an error if invalid JSON
+
+        return jsonify({"response": gpt_response}), 200
+
+    except json.JSONDecodeError as e:
+        return jsonify({"error": f"Invalid JSON response from GPT: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/reset")

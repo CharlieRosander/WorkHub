@@ -1,96 +1,170 @@
 {% extends "layout.html" %}
 {% block content %}
 <title>Send Email</title>
-<h2 class="mb-4 text-center">Send Email</h2>
 
-<div class="d-flex justify-content-center">
-    <div class="row" style="width: 90%;">
+<div class="container-fluid py-4">
+    <h2 class="mb-4 text-center">Send Email</h2>
 
+    <div class="row g-4">
         <!-- Original Email Section -->
-        <div class="col p-3 border rounded email-column">
-            <h3 class="text-center">Original Email</h3>
-            <p><strong>From:</strong> {{ email.from or 'Sender Name' }}</p>
-            <p><strong>Subject:</strong> {{ email.subject or 'Email Subject' }}</p>
-            <div class="border p-3 overflow-auto" style="height: 450px; white-space: pre-line;">
-                {{ email.body or '<p class="text-muted">No email content available.</p>'|safe }}
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0 text-center">Original Email</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong class="text-muted">From:</strong>
+                        <span class="ms-2">{{ email.from or 'Sender Name' }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong class="text-muted">Subject:</strong>
+                        <span class="ms-2">{{ email.subject or 'Email Subject' }}</span>
+                    </div>
+                    <div class="border rounded p-3 bg-light overflow-auto" style="height: 400px; font-size: 0.95rem;">
+                        {{ email.body or '<p class="text-muted">No email content available.</p>'|safe }}
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Your Response Section -->
-        <div class="col p-3 border rounded email-column">
-            <h3 class="text-center">Your Email</h3>
-            <form method="post" action="{{ url_for('send_email') }}" onsubmit="return confirmSendEmail();">
-                <div class="mb-3">
-                    <label for="to" class="form-label">To</label>
-                    <input type="email" class="form-control" id="to" name="to" required placeholder="Recipient's email"
-                        value="{{ request.form.get('to', '') }}">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0 text-center">Your Email</h3>
                 </div>
-                <div class="mb-3">
-                    <label for="subject" class="form-label">Subject</label>
-                    <input type="text" class="form-control" id="subject" name="subject" required
-                        placeholder="Enter the email subject" value="{{ request.form.get('subject', '') }}">
+                <div class="card-body">
+                    <form id="emailForm" method="post" action="{{ url_for('send_email') }}">
+                        <div class="mb-3">
+                            <label for="to" class="form-label text-muted">To</label>
+                            <input type="email" class="form-control form-control-sm" id="to" name="to" required 
+                                placeholder="Recipient's email" value="{{ request.form.get('to', '') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="subject" class="form-label text-muted">Subject</label>
+                            <input type="text" class="form-control form-control-sm" id="subject" name="subject" required
+                                placeholder="Enter the email subject" value="{{ request.form.get('subject', '') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label text-muted">Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="12"
+                                placeholder="Type your message here..." style="font-size: 0.95rem;">{{ request.form.get('message', '') }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-paper-plane me-2"></i>Send Email
+                        </button>
+                    </form>
                 </div>
-                <div class="mb-3">
-                    <label for="message" class="form-label">Message</label>
-                    <textarea class="form-control" id="message" name="message" rows="10"
-                        placeholder="Type your message here...">{{ request.form.get('message', '') }}</textarea>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Send</button>
-            </form>
+            </div>
         </div>
 
         <!-- GPT's Response Section -->
-        <div class="col p-3 border rounded email-column">
-            <h3 class="text-center">GPT's Draft</h3>
-            <form id="gpt_form">
-                <div class="mb-3">
-                    <label for="gpt_to" class="form-label">To</label>
-                    <input type="email" class="form-control" id="gpt_to" name="gpt_to" placeholder="Recipient's email"
-                        value="{{ email.from }}">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0 text-center">GPT's Draft</h3>
                 </div>
-                <div class="mb-3">
-                    <label for="gpt_subject" class="form-label">Subject</label>
-                    <input type="text" class="form-control" id="gpt_subject" name="gpt_subject"
-                        placeholder="Email subject">
-                </div>
-                <div class="mb-3">
-                    <label for="gpt_response" class="form-label">GPT's message</label>
-                    <textarea class="form-control" id="gpt_response" name="gpt_response" rows="10"
-                        placeholder="GPT message will be shown here">{{ gpt_response }}</textarea>
-                </div>
-
-                <!-- Knappar för GPT -->
-                <div class="d-flex justify-content-between mt-3">
-                    <button type="button" class="btn btn-primary w-50 me-2" onclick="useGptResponse()">Use GPT
-                        Response</button>
-                    <form method="post" action="{{ url_for('regenerate_gpt_response') }}" class="w-50">
-                        <button class="btn btn-warning w-50" type="submit">Regenerate Response</button>
-                    </form>
-                </div>
-
-                <!-- Generate from source content Section -->
-                <div class="mt-4">
-                    <form method="post" action="{{ url_for('generate_gpt_from_link') }}">
+                <div class="card-body">
+                    <form id="gptForm">
                         <div class="mb-3">
-                            <label for="source_content" class="form-label">Source Content</label>
-                            <textarea class="form-control" id="source_content" name="source_content" rows="3"
-                                placeholder="Enter a link or paste text here"></textarea>
+                            <label for="gpt_response" class="form-label text-muted">Generated Response</label>
+                            <textarea class="form-control" id="gpt_response" name="gpt_response" rows="12"
+                                placeholder="GPT message will be shown here" style="font-size: 0.95rem;">{{ gpt_response }}</textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="additional_instructions" class="form-label">Additional Instructions</label>
-                            <textarea class="form-control" id="additional_instructions" name="additional_instructions"
-                                rows="3" placeholder="Enter additional comments or instructions here"></textarea>
+                        
+                        <div class="d-grid gap-2 mb-4">
+                            <button type="button" class="btn btn-primary" onclick="useGptResponse()">
+                                <i class="fas fa-check me-2"></i>Use GPT Response
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="regenerateResponse()">
+                                <i class="fas fa-sync me-2"></i>Regenerate Response
+                            </button>
                         </div>
-                        <div class="d-flex justify-content-center mt-3">
-                            <button class="btn btn-info w-50" type="submit">Generate from Source Content</button>
+
+                        <div class="border-top pt-4">
+                            <h4 class="h6 mb-3">Generate from Source</h4>
+                            <div class="mb-3">
+                                <label for="source_content" class="form-label text-muted">Source Content</label>
+                                <textarea class="form-control form-control-sm" id="source_content" name="source_content" rows="3"
+                                    placeholder="Enter a link or paste text here"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="additional_instructions" class="form-label text-muted">Additional Instructions</label>
+                                <textarea class="form-control form-control-sm" id="additional_instructions" name="additional_instructions"
+                                    rows="2" placeholder="Enter additional comments or instructions here"></textarea>
+                            </div>
+                            <button type="button" class="btn btn-info w-100" onclick="generateFromSource()">
+                                <i class="fas fa-magic me-2"></i>Generate from Source
+                            </button>
                         </div>
                     </form>
+                    <div id="gptStatus" class="alert mt-3" style="display: none; font-size: 0.9rem;"></div>
                 </div>
-
-            </form>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+.card {
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:focus {
+    box-shadow: none;
+}
+
+.loading {
+    position: relative;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .container-fluid {
+        padding: 1rem;
+    }
+}
+</style>
 
 <script>
     function useGptResponse() {
@@ -99,21 +173,105 @@
         document.getElementById("subject").value = document.getElementById("gpt_subject").value;
     }
 
-    window.onload = function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const gptResponseDiv = document.getElementById("gpt_response");
-        let gptResponse = gptResponseDiv.value;
+        if (gptResponseDiv) {
+            let gptResponse = gptResponseDiv.value;
 
-        const subjectMatch = gptResponse.match(/{Subject:\s*(.*?)}/);
-        if (subjectMatch) {
-            document.getElementById("gpt_subject").value = subjectMatch[1].trim();
-            gptResponse = gptResponse.replace(subjectMatch[0], "").trim();
+            const subjectMatch = gptResponse.match(/{Subject:\s*(.*?)}/);
+            if (subjectMatch) {
+                document.getElementById("gpt_subject").value = subjectMatch[1].trim();
+                gptResponse = gptResponse.replace(subjectMatch[0], "").trim();
+            }
+
+            gptResponseDiv.value = gptResponse;
+        }
+    });
+
+    async function regenerateResponse() {
+        const gptStatus = document.getElementById('gptStatus');
+        const regenerateButton = document.querySelector('button[onclick="regenerateResponse()"]');
+        
+        try {
+            regenerateButton.disabled = true;
+            gptStatus.className = 'alert alert-info mt-3';
+            gptStatus.textContent = 'Regenerating response...';
+            gptStatus.style.display = 'block';
+
+            const response = await fetch('/regenerate_gpt_response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email_id: new URLSearchParams(window.location.search).get('email_id')
+                })
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('gpt_response').value = result.response;
+                gptStatus.className = 'alert alert-success mt-3';
+                gptStatus.textContent = 'Response regenerated successfully!';
+            } else {
+                throw new Error(result.message || 'Failed to regenerate response');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            gptStatus.className = 'alert alert-danger mt-3';
+            gptStatus.textContent = 'Error regenerating response: ' + error.message;
+        } finally {
+            regenerateButton.disabled = false;
+        }
+    }
+
+    async function generateFromSource() {
+        const gptStatus = document.getElementById('gptStatus');
+        const generateButton = document.querySelector('button[onclick="generateFromSource()"]');
+        const sourceContent = document.getElementById('source_content').value;
+        const additionalInstructions = document.getElementById('additional_instructions').value;
+
+        if (!sourceContent) {
+            gptStatus.className = 'alert alert-warning mt-3';
+            gptStatus.textContent = 'Please enter source content';
+            gptStatus.style.display = 'block';
+            return;
         }
 
-        gptResponseDiv.value = gptResponse;
-    };
+        try {
+            generateButton.disabled = true;
+            gptStatus.className = 'alert alert-info mt-3';
+            gptStatus.textContent = 'Generating response...';
+            gptStatus.style.display = 'block';
 
-    function confirmSendEmail() {
-        return confirm("Are you sure you want to send this email?");
+            const response = await fetch('/generate_gpt_from_link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    source_content: sourceContent,
+                    additional_instructions: additionalInstructions
+                })
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('gpt_response').value = result.response;
+                gptStatus.className = 'alert alert-success mt-3';
+                gptStatus.textContent = 'Response generated successfully!';
+            } else {
+                throw new Error(result.message || 'Failed to generate response');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            gptStatus.className = 'alert alert-danger mt-3';
+            gptStatus.textContent = 'Error generating response: ' + error.message;
+        } finally {
+            generateButton.disabled = false;
+        }
     }
 </script>
 {% endblock content %}

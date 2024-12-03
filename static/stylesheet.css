@@ -114,7 +114,6 @@ div.preformatted-text {
 .modal-header {
     position: sticky;
     top: 0;
-    z-index: 1055;
     /* Högre än innehållet */
     background-color: white;
     /* Färg för att matcha modalens bakgrund */
@@ -145,16 +144,48 @@ div.preformatted-text {
     /* Mörk text för kontrast */
 }
 
-/* .table-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: flex-start;
-} */
+/* Dropdown menu styles */
+.dropdown-menu {
+    width: 300px;
+}
 
+.dropdown-item {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-toggle {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+/* Fix for dropdown text overflow */
+.dropdown-menu {
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.dropdown-item {
+    white-space: normal;
+    word-wrap: break-word;
+    padding: 8px 15px;
+}
+
+/* Table styles */
 .table-actions {
     max-width: 300px;
-    /* Begränsa bredden */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.table td {
+    max-width: 300px;
+    text-overflow: ellipsis;
 }
 
 .card {
@@ -182,4 +213,599 @@ div.preformatted-text {
 .dropdown-menu .dropdown-item:hover {
     color: #000;
     /* Svart text vid hover */
+}
+
+/* Email List Styles */
+.email-item {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #e0e0e0;
+    margin-bottom: 1rem;
+}
+
+.email-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+}
+
+.from-address {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #2c3e50;
+}
+
+.card-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #34495e;
+    font-weight: 500;
+}
+
+.email-content {
+    display: none;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.email-content.show {
+    display: block;
+}
+
+.email-body-content {
+    padding: 1.5rem;
+    background-color: #fff;
+    border-radius: 0.5rem;
+    white-space: pre-wrap;
+    margin: 1rem 0;
+}
+
+.loading-spinner {
+    padding: 2rem;
+    text-align: center;
+}
+
+.empty-state {
+    padding: 3rem 0;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Webscraping Page Styles */
+.webscraping-container {
+    max-width: 1400px;
+    /* Increased container width */
+    margin: 0 auto;
+    padding: 0 20px;
+    overflow: visible !important;
+    padding-bottom: 200px;
+    /* Add space for dropdowns */
+}
+
+.scraping-form {
+    background-color: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.scraping-table {
+    background-color: #fff;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    position: relative;
+    overflow: visible !important;
+}
+
+.scraping-table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    padding: 1rem;
+}
+
+.scraping-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.action-buttons-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: relative;
+}
+
+.action-row {
+    display: flex;
+    flex-wrap: wrap;
+    /* Allow wrapping if needed */
+    gap: 5px;
+    /* Reduced gap */
+    margin-bottom: 3px;
+    /* Reduced margin */
+    position: relative;
+}
+
+.action-row .btn,
+.action-row button.btn {
+    width: 165px;
+    /* Ökat från 160px för mer utrymme */
+    text-align: center;
+    margin: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+.action-row .btn i,
+.action-row button.btn i {
+    margin-right: 6px;
+    /* Minskat från 8px för mindre whitespace */
+}
+
+.action-row .dropdown-toggle::after {
+    margin-left: 8px;
+}
+
+.view-action .btn,
+.process-action .btn,
+.save-action .btn {
+    width: 165px;
+}
+
+.filename-list {
+    padding: 1rem;
+}
+
+.filename-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--bs-gray-100);
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.filename-item:hover {
+    background: var(--bs-gray-200);
+    cursor: pointer;
+}
+
+.filename-item:last-child {
+    margin-bottom: 0;
+}
+
+.filename-item i {
+    color: var(--bs-gray-600);
+    flex-shrink: 0;
+}
+
+.filename-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: var(--bs-gray-100);
+    border-bottom: 1px solid var(--bs-gray-200);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .action-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Button hover effects */
+.btn-outline-primary:hover i {
+    color: white;
+}
+
+.btn-outline-success:hover i {
+    color: white;
+}
+
+.btn-outline-info:hover i {
+    color: white;
+}
+
+.btn-outline-secondary:hover i {
+    color: white;
+}
+
+/* Filename Generator Styles */
+.filename-generator {
+    margin-top: 1rem;
+}
+
+.filename-generator .btn {
+    width: 100%;
+}
+
+.filename-list {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.filename-item {
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.25rem;
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.filename-item:last-child {
+    margin-bottom: 0;
+}
+
+.filename-item i {
+    color: #6c757d;
+}
+
+/* Action Buttons Container */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 180px;
+    max-width: 180px;
+}
+
+/* Button Styles */
+.action-buttons .btn {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.action-buttons .dropdown {
+    margin: 0;
+}
+
+.action-buttons .btn i {
+    width: 1rem;
+    text-align: center;
+}
+
+/* Dropdown Styles */
+.action-buttons .dropdown-menu {
+    width: 100%;
+    padding: 0.25rem;
+    min-width: 180px;
+}
+
+.action-buttons .dropdown-item {
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.action-buttons .dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(2px);
+}
+
+.action-buttons .dropdown-item i {
+    width: 1rem;
+    text-align: center;
+}
+
+/* Filename Generator */
+.filename-generator {
+    margin: 0;
+}
+
+.filename-generator .btn {
+    margin: 0;
+}
+
+.filename-list {
+    margin-top: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+}
+
+/* Hover Effects for Different Button Types */
+.action-buttons .dropdown-item:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+.action-buttons .dropdown-item:active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Custom hover colors for different actions */
+.action-buttons .view-action .dropdown-item:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+.action-buttons .process-action .dropdown-item:hover {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #198754;
+}
+
+.action-buttons .save-action .dropdown-item:hover {
+    background-color: rgba(13, 202, 240, 0.1);
+    color: #0dcaf0;
+}
+
+/* Improve button styles */
+.action-buttons .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+}
+
+.action-buttons .btn i {
+    width: 1rem;
+    text-align: center;
+}
+
+.action-buttons .btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.action-buttons .btn-outline-success:hover {
+    background-color: #198754;
+    color: #fff;
+}
+
+.action-buttons .btn-outline-info:hover {
+    background-color: #0dcaf0;
+    color: #fff;
+}
+
+.action-buttons .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Navbar styling */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem 1rem;
+}
+
+.navbar-brand {
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s ease;
+}
+
+.navbar-brand:hover {
+    opacity: 0.9;
+}
+
+.navbar-brand h1 {
+    font-size: 1.75rem;
+    margin: 0;
+}
+
+.btn-outline-light {
+    border-width: 1.5px;
+    padding: 0.375rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-light:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-menu {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 0.5rem;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1.5rem;
+    transition: background-color 0.15s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Navbar buttons and dropdown menu */
+.nav-btn {
+    padding: 8px 16px;
+    margin: 0 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    color: #fff;
+}
+
+.nav-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.user-dropdown {
+    min-width: 300px;
+    padding: 8px 16px;
+    font-size: 0.95rem;
+}
+
+.wide-dropdown {
+    min-width: 250px;
+}
+
+.dropdown-item {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Webscraping button styles */
+.webscraping-actions .btn {
+    width: 180px;
+    /* Width that fits "Process with GPT" comfortably */
+    text-align: center;
+    margin: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Adjust the Actions column width */
+.scraping-table th:last-child,
+.scraping-table td:last-child {
+    min-width: 360px;
+    /* Increased to accommodate wider buttons */
+}
+
+.table-responsive {
+    overflow-x: auto;
+    overflow: visible !important;
+}
+
+/* Generated name display styles */
+.generated-name-display {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    border: 1px solid #dee2e6;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.generated-name-text {
+    color: #495057;
+    margin-right: 4px;
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.copy-name-btn {
+    color: #6c757d;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.copy-name-btn:hover {
+    color: #0d6efd;
+}
+
+.copy-name-btn .fa-check {
+    color: #198754;
+}
+
+/* Adjust URL cell padding */
+.text-break {
+    padding-right: 20px;
+}
+
+/* Dropdown menu fixes */
+td {
+    position: relative;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    min-width: 250px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, .15);
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+    padding: 0.5rem 0;
+    margin-top: 2px;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    clear: both;
+    white-space: nowrap;
+    background: none;
+    border: 0;
+}
+
+/* Remove any max-height constraints */
+body,
+html,
+main,
+.container,
+.row,
+.col {
+    overflow: visible !important;
 }

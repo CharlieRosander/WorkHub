@@ -1,51 +1,251 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<div class="container py-5 h-100">
-    <div class="row d-flex justify-content-center h-100">
-        <!-- Registration Info -->
-        <div class="col-lg-8 col-xl-6">
-            <div class="card rounded-3">
-                <div class="card-body p-4 p-md-5">
-                    <h3 class="mb-4 pb-2 pb-md-0 px-md-2">Registration Info</h3>
-                    <form class="px-md-2" method="post">
-                        <div class="form-outline mb-4">
-                            <label class="form-label" for="company_name">Company's Name</label>
+<div class="container py-5">
+    <h2 class="text-center mb-4">Company Registration</h2>
+    <p class="text-muted text-center mb-4">Register new companies and use AI-powered autofill from scraped job listings
+        to save time.</p>
+
+    <div class="row justify-content-center">
+        <!-- Registration Form -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Company Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="companyForm">
+                        <div class="mb-3">
+                            <label class="form-label" for="company_name">Company Name</label>
                             <input type="text" id="company_name" name="name" class="form-control" />
                         </div>
-                        <div class="form-outline mb-4">
-                            <label class="form-label" for="date_applied">Date applied</label>
-                            <input type="date" id="date_applied" name="date_applied" class="form-control" />
+                        <div class="mb-3">
+                            <label class="form-label" for="date_applied">Date Applied</label>
+                            <input type="date" id="date_applied" name="date_applied" class="form-control"
+                                value="{{ today }}" />
                         </div>
-                        <div class="form-outline mb-4">
+                        <div class="mb-3">
                             <label class="form-label" for="location">Location</label>
                             <input type="text" id="location" name="location" class="form-control" />
                         </div>
-                        <div class="form-outline mb-4">
+                        <div class="mb-3">
                             <label class="form-label" for="industry">Industry</label>
                             <input type="text" id="industry" name="industry" class="form-control" />
                         </div>
-                        <div class="form-outline mb-4">
+                        <div class="mb-3">
                             <label class="form-label" for="contact_person">Contact Person</label>
                             <input type="text" id="contact_person" name="contact_person" class="form-control" />
                         </div>
-                        <div class="form-outline mb-4">
+                        <div class="mb-3">
                             <label class="form-label" for="email">Email</label>
-                            <input type="text" id="email" name="email" class="form-control" />
+                            <input type="email" id="email" name="email" class="form-control" />
                         </div>
-                        <div class="form-outline mb-4">
+                        <div class="mb-3">
                             <label class="form-label" for="phone">Phone</label>
-                            <input type="text" id="phone" name="phone" class="form-control" />
+                            <input type="tel" id="phone" name="phone" class="form-control" />
                         </div>
-                        <div class="form-outline mb-4">
-                            <label class="form-label" for="link">Link to website</label>
-                            <input type="text" id="link" name="link" class="form-control" />
+                        <div class="mb-3">
+                            <label class="form-label" for="link">Website Link</label>
+                            <input type="url" id="link" name="link" class="form-control" />
                         </div>
-                        <button type="submit" class="btn btn-success btn-lg mb-1">Submit</button>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Register Company
+                            </button>
+                        </div>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scraped Data Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">AI Autofill Assistant</h5>
+                    <div class="info-tooltip" data-bs-toggle="tooltip" data-bs-placement="left"
+                        title="Select a scraped job listing below to automatically extract and fill company information using AI. 
+                        The assistant will analyze the job posting and populate the form with the relevant details it can find.">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for data in scraped_data %}
+                        {% if data.gpt_cleaned_html %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{{ data.scraped_url }}" target="_blank" class="text-truncate me-3">
+                                    <small>{{ data.scraped_url }}</small>
+                                </a>
+                                <div class="btn-group btn-group-sm flex-nowrap">
+                                    <button class="btn btn-outline-secondary view-html-btn" data-bs-toggle="modal"
+                                        data-bs-target="#dynamicViewModal" data-title="Cleaned HTML"
+                                        data-content="{{ data.gpt_cleaned_html | e }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-primary autofill-btn" data-id="{{ data.id }}">
+                                        <i class="fas fa-magic"></i> Autofill
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- View Modal -->
+<div class="modal fade" id="dynamicViewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <pre class="bg-light p-3 rounded"><code></code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-tooltip {
+        cursor: help;
+        color: rgba(255, 255, 255, 0.8);
+        transition: color 0.2s;
+    }
+
+    .info-tooltip:hover {
+        color: white;
+    }
+
+    .list-group-item {
+        padding: 0.5rem 1rem;
+    }
+
+    .text-truncate {
+        max-width: 350px;
+    }
+
+    .list-group-item a {
+        color: #0d6efd;
+    }
+
+    .list-group-item a:hover {
+        color: #0a58ca;
+        text-decoration: underline;
+    }
+
+    .modal-dialog {
+        height: 90vh;
+    }
+
+    .modal-content {
+        height: 100%;
+    }
+
+    .modal-body {
+        height: calc(100% - 56px);
+        /* Subtract header height */
+    }
+
+    .modal-body pre {
+        height: 100%;
+        margin: 0;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+
+        const autofillButtons = document.querySelectorAll('.autofill-btn');
+        const viewButtons = document.querySelectorAll('.view-html-btn');
+
+        // View HTML functionality
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const modal = document.getElementById('dynamicViewModal');
+                const title = this.dataset.title;
+                const content = this.dataset.content;
+
+                modal.querySelector('.modal-title').textContent = title;
+                modal.querySelector('code').textContent = content;
+            });
+        });
+
+        // Autofill functionality
+        autofillButtons.forEach(button => {
+            button.addEventListener('click', async function () {
+                const dataId = this.dataset.id;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                try {
+                    const response = await fetch('/autofill_company', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ data_id: dataId })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Parse the GPT response which should be a JSON string
+                        const companyData = JSON.parse(data.response);
+
+                        // Fill in the form fields
+                        document.getElementById('company_name').value = companyData.company_name || '';
+                        document.getElementById('location').value = companyData.location || '';
+                        document.getElementById('industry').value = companyData.industry || '';
+                        document.getElementById('contact_person').value = companyData.contact_person || '';
+                        document.getElementById('email').value = companyData.email || '';
+                        document.getElementById('phone').value = companyData.phone || '';
+                        document.getElementById('link').value = companyData.link || '';
+
+                        // Show success message
+                        showAlert('Form autofilled successfully!', 'success');
+                    } else {
+                        throw new Error(data.error || 'Failed to autofill form');
+                    }
+                } catch (error) {
+                    showAlert(error.message, 'danger');
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-magic"></i> Autofill';
+                }
+            });
+        });
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            const form = document.getElementById('companyForm');
+            form.parentNode.insertBefore(alertDiv, form);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    });
+</script>
 {% endblock %}

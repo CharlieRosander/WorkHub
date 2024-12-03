@@ -20,8 +20,6 @@ Currently a work in progress, right now for my own personal use.
   - Generate drafts for specific purposes, such as follow-ups, responses, or composing emails from source material (e.g., job listings, web pages).
   - Regenerate responses or add additional instructions if the draft is not to your liking.
   - Auto-fill recipient and subject fields using relevant context.
-  
-
 - **Job Postings**:
   - Web scraping of job listings and storing structured HTML data in the database.
   - Automated cleaning and formatting of scraped content using a GPT-assistant, currently used to replicate job listings for storage in the database or on disk, but easily modifiable for other use cases.
@@ -29,6 +27,9 @@ Currently a work in progress, right now for my own personal use.
   - View the scraped content directly on the platform (ex. the replicated job-listing)
 - **Company Records**:
   - Add, edit, and delete companies related to job applications.
+  - Autofill-function for registering companies, using GPT-assistant to extract relevant information from job postings based on the scraped&cleaned HTML.
+  - View and edit company details, including name, address, and contact information.
+  - View stats on registered companies, such as total applications, unique industries, and locations.
 
 ## Technical Overview
 
@@ -44,7 +45,7 @@ Currently a work in progress, right now for my own personal use.
 
 ## Notes
 
-This project is just the beginning, with much more planned and endless possibilities ahead.
+This project is just the beginning, with much more planned and an abundance of possibilities to explore and expand upon.
 
 ### Future Features and Ideas
 - **Auto-logging of Applications**: Automatically record and track companies you've applied to.
