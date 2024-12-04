@@ -75,25 +75,27 @@
     <nav aria-label="Email navigation" class="mt-4">
         <ul class="pagination justify-content-center">
             <li class="page-item {% if page == 1 %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('view_emails', page=page-1) if page > 1 else '#' }}" aria-label="Previous">
+                <a class="page-link" href="{{ url_for('view_emails', page=page-1) if page > 1 else '#' }}"
+                    aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
-            
+
             {% for p in range(1, total_pages + 1) %}
-                {% if p == page %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ p }}</span>
-                    </li>
-                {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('view_emails', page=p) }}">{{ p }}</a>
-                    </li>
-                {% endif %}
+            {% if p == page %}
+            <li class="page-item active">
+                <span class="page-link">{{ p }}</span>
+            </li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('view_emails', page=p) }}">{{ p }}</a>
+            </li>
+            {% endif %}
             {% endfor %}
-            
+
             <li class="page-item {% if page == total_pages %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('view_emails', page=page+1) if page < total_pages else '#' }}" aria-label="Next">
+                <a class="page-link" href="{{ url_for('view_emails', page=page+1) if page < total_pages else '#' }}"
+                    aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
             </li>
@@ -101,47 +103,6 @@
     </nav>
     {% endif %}
 </div>
-
-<style>
-    .email-item {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .email-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
-    }
-
-    .from-address {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .card-title {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .email-content {
-        display: none;
-    }
-
-    .email-content.show {
-        display: block;
-    }
-
-    .loading-spinner {
-        padding: 2rem;
-    }
-
-    .btn-sm {
-        padding: .25rem .5rem;
-        font-size: .875rem;
-        border-radius: .2rem;
-    }
-</style>
 
 <script>
     function toggleEmail(emailId) {

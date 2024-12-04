@@ -35,3 +35,4 @@ class ScrapedContent(db.Model):
     gpt_cleaned_html = db.Column(db.Text)
     scraped_url = db.Column(db.String(255), nullable=False)
     scraped_date = db.Column(db.DateTime)
+    generated_name = db.Column(db.String(255), nullable=True)

@@ -37,9 +37,10 @@ import re
 from dotenv import load_dotenv
 
 load_dotenv(".env")
-database_path = os.getenv("DATABASE_PATH")
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
+database_path = os.getenv("DATABASE_PATH")
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.getenv('DATABASE_PATH')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
@@ -352,11 +353,13 @@ def generate_filenames():
             return jsonify({"error": "No data found for provided IDs"}), 404
 
         filenames = []
+        results = []
 
         for item in scraped_data:
             gpt_response = item.gpt_cleaned_html
             if not gpt_response:
                 filenames.append("Unnamed.html")
+                results.append({"id": item.id, "name": "Unnamed"})
                 continue
 
             # Skicka GPT-cleaned HTML till naming-assistenten
@@ -372,16 +375,19 @@ def generate_filenames():
             if match:
                 listing_name = match.group(1).strip()
                 item.listing_name = listing_name  # Uppdatera databasen
+                item.generated_name = listing_name  # Spara det genererade namnet
                 filenames.append(f"{listing_name}.html")
+                results.append({"id": item.id, "name": listing_name})
             else:
                 print(
                     f"No match found for ID {item.id} in response: {naming_gpt_response}"
                 )
                 filenames.append("Unnamed.html")
+                results.append({"id": item.id, "name": "Unnamed"})
 
         # Commit till databasen
         db.session.commit()
-        return jsonify({"filenames": filenames})
+        return jsonify({"filenames": filenames, "results": results})
 
     except Exception as e:
         # Debug: Logga felet

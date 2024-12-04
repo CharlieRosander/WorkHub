@@ -47,10 +47,12 @@
                                 {{ data.scraped_url }}
                             </a>
                             {% if data.gpt_cleaned_html %}
-                            <div id="generated-name-{{ data.id }}" class="generated-name-display mt-2 d-none">
+                            <div id="generated-name-{{ data.id }}"
+                                class="generated-name-display mt-2 {% if not data.generated_name %}d-none{% endif %}">
                                 <div class="d-flex align-items-center">
                                     <i class="fas fa-file-signature text-muted me-2"></i>
-                                    <span class="generated-name-text"></span>
+                                    <span class="generated-name-text">{% if data.generated_name %}{{ data.generated_name
+                                        }}{% endif %}</span>
                                     <button class="btn btn-link btn-sm ms-2 copy-name-btn p-0" title="Copy name">
                                         <i class="fas fa-copy"></i>
                                     </button>
@@ -64,11 +66,13 @@
                                     <!-- View Options -->
                                     <div class="dropdown view-action">
                                         <button class="btn btn-outline-primary dropdown-toggle" type="button"
-                                            id="viewDropdown{{ data.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            id="viewDropdown{{ data.id }}" data-bs-toggle="dropdown"
+                                            aria-expanded="false">
                                             <i class="fas fa-eye"></i>
                                             <span>View HTML</span>
                                         </button>
-                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="viewDropdown{{ data.id }}">
+                                        <ul class="dropdown-menu dropdown-menu-end"
+                                            aria-labelledby="viewDropdown{{ data.id }}">
                                             <li>
                                                 <button class="dropdown-item view-html-btn" data-bs-toggle="modal"
                                                     data-bs-target="#dynamicViewModal" data-title="Raw HTML"
@@ -262,25 +266,16 @@
                 })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.filenames && data.filenames.length > 0) {
-                            const filename = data.filenames[0]; // Vi tar bara första namnet
-                            generatedNameText.textContent = filename;
-                            generatedNameDisplay.classList.remove('d-none');
-
-                            // Setup copy button
-                            copyButton.onclick = function (e) {
-                                e.preventDefault();
-                                navigator.clipboard.writeText(filename).then(() => {
-                                    const originalIcon = copyButton.innerHTML;
-                                    copyButton.innerHTML = '<i class="fas fa-check text-success"></i>';
-                                    setTimeout(() => {
-                                        copyButton.innerHTML = originalIcon;
-                                    }, 1500);
-                                });
-                            };
+                        if (data.results) {
+                            data.results.forEach(result => {
+                                const generatedNameDisplay = document.getElementById(`generated-name-${result.id}`);
+                                const generatedNameText = generatedNameDisplay.querySelector('.generated-name-text');
+                                generatedNameText.textContent = result.name;
+                                generatedNameDisplay.classList.remove('d-none');
+                            });
                         } else if (data.error) {
-                            generatedNameText.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle"></i> ${data.error}</span>`;
-                            generatedNameDisplay.classList.remove('d-none');
+                            // Handle error case
+                            console.error('Error:', data.error);
                         }
                     })
                     .catch(error => {

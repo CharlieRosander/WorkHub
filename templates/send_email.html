@@ -21,7 +21,8 @@
                         <strong class="text-muted">Subject:</strong>
                         <span class="ms-2">{{ email.subject or 'Email Subject' }}</span>
                     </div>
-                    <div class="border rounded p-3 bg-light overflow-auto" style="height: 400px; font-size: 0.95rem;">
+                    <div class="border rounded p-3 bg-light overflow-auto"
+                        style="height: 400px; font-size: 0.95rem; white-space: pre-line;">
                         {{ email.body or '<p class="text-muted">No email content available.</p>'|safe }}
                     </div>
                 </div>
@@ -38,7 +39,7 @@
                     <form id="emailForm" method="post" action="{{ url_for('send_email') }}">
                         <div class="mb-3">
                             <label for="to" class="form-label text-muted">To</label>
-                            <input type="email" class="form-control form-control-sm" id="to" name="to" required 
+                            <input type="email" class="form-control form-control-sm" id="to" name="to" required
                                 placeholder="Recipient's email" value="{{ request.form.get('to', '') }}">
                         </div>
                         <div class="mb-3">
@@ -49,7 +50,8 @@
                         <div class="mb-3">
                             <label for="message" class="form-label text-muted">Message</label>
                             <textarea class="form-control" id="message" name="message" rows="12"
-                                placeholder="Type your message here..." style="font-size: 0.95rem;">{{ request.form.get('message', '') }}</textarea>
+                                placeholder="Type your message here..."
+                                style="font-size: 0.95rem;">{{ request.form.get('message', '') }}</textarea>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="fas fa-paper-plane me-2"></i>Send Email
@@ -70,9 +72,10 @@
                         <div class="mb-3">
                             <label for="gpt_response" class="form-label text-muted">Generated Response</label>
                             <textarea class="form-control" id="gpt_response" name="gpt_response" rows="12"
-                                placeholder="GPT message will be shown here" style="font-size: 0.95rem;">{{ gpt_response }}</textarea>
+                                placeholder="GPT message will be shown here"
+                                style="font-size: 0.95rem;">{{ gpt_response }}</textarea>
                         </div>
-                        
+
                         <div class="d-grid gap-2 mb-4">
                             <button type="button" class="btn btn-primary" onclick="useGptResponse()">
                                 <i class="fas fa-check me-2"></i>Use GPT Response
@@ -86,13 +89,15 @@
                             <h4 class="h6 mb-3">Generate from Source</h4>
                             <div class="mb-3">
                                 <label for="source_content" class="form-label text-muted">Source Content</label>
-                                <textarea class="form-control form-control-sm" id="source_content" name="source_content" rows="3"
-                                    placeholder="Enter a link or paste text here"></textarea>
+                                <textarea class="form-control form-control-sm" id="source_content" name="source_content"
+                                    rows="3" placeholder="Enter a link or paste text here"></textarea>
                             </div>
                             <div class="mb-3">
-                                <label for="additional_instructions" class="form-label text-muted">Additional Instructions</label>
-                                <textarea class="form-control form-control-sm" id="additional_instructions" name="additional_instructions"
-                                    rows="2" placeholder="Enter additional comments or instructions here"></textarea>
+                                <label for="additional_instructions" class="form-label text-muted">Additional
+                                    Instructions</label>
+                                <textarea class="form-control form-control-sm" id="additional_instructions"
+                                    name="additional_instructions" rows="2"
+                                    placeholder="Enter additional comments or instructions here"></textarea>
                             </div>
                             <button type="button" class="btn btn-info w-100" onclick="generateFromSource()">
                                 <i class="fas fa-magic me-2"></i>Generate from Source
@@ -106,66 +111,6 @@
     </div>
 </div>
 
-<style>
-.card {
-    border: none;
-    transition: transform 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-}
-
-.form-control:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.btn {
-    position: relative;
-    overflow: hidden;
-}
-
-.btn:focus {
-    box-shadow: none;
-}
-
-.loading {
-    position: relative;
-    opacity: 0.7;
-    pointer-events: none;
-}
-
-.loading::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    transform: translate(-50%, -50%);
-}
-
-@keyframes spin {
-    0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-@media (max-width: 768px) {
-    .card {
-        margin-bottom: 1rem;
-    }
-    
-    .container-fluid {
-        padding: 1rem;
-    }
-}
-</style>
-
 <script>
     function useGptResponse() {
         const gptResponse = document.getElementById("gpt_response").value;
@@ -173,7 +118,7 @@
         document.getElementById("subject").value = document.getElementById("gpt_subject").value;
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const gptResponseDiv = document.getElementById("gpt_response");
         if (gptResponseDiv) {
             let gptResponse = gptResponseDiv.value;
@@ -191,7 +136,7 @@
     async function regenerateResponse() {
         const gptStatus = document.getElementById('gptStatus');
         const regenerateButton = document.querySelector('button[onclick="regenerateResponse()"]');
-        
+
         try {
             regenerateButton.disabled = true;
             gptStatus.className = 'alert alert-info mt-3';
@@ -209,7 +154,7 @@
             });
 
             const result = await response.json();
-            
+
             if (response.ok) {
                 document.getElementById('gpt_response').value = result.response;
                 gptStatus.className = 'alert alert-success mt-3';
@@ -257,7 +202,7 @@
             });
 
             const result = await response.json();
-            
+
             if (response.ok) {
                 document.getElementById('gpt_response').value = result.response;
                 gptStatus.className = 'alert alert-success mt-3';
