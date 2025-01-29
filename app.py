@@ -567,8 +567,6 @@ def inject_user():
 if __name__ == "__main__":
     with app.app_context():
         database_dir = os.getenv("DATABASE_DIR")
-        if not database_dir:
-            database_dir = "database"
         if not os.path.exists(database_dir):
             os.makedirs(database_dir)
         db.create_all()
