@@ -537,6 +537,17 @@ def autofill_company():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/delete_scrape/<int:id>", methods=["POST"])
+@login_required
+def delete_scrape(id):
+    scrape = db.session.get(ScrapedContent, id)
+    if scrape:
+        db.session.delete(scrape)
+        db.session.commit()
+        flash("Website data deleted successfully.", "success")
+    return redirect(url_for("webscraping"))
+
+
 @app.route("/reset")
 def reset():
     session.pop("google_token", None)
