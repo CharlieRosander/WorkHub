@@ -2,27 +2,56 @@
 {% block content %}
 
 <div class="webscraping-container py-5">
-    <!-- Website Scraping Form -->
-    <div class="scraping-form">
-        <h3 class="mb-4">Website Scraping</h3>
-        <form method="post" action="{{ url_for('scrape_job_listing') }}">
-            <div class="form-group mb-4">
-                <label class="form-label" for="scrape_link">Website to Scrape</label>
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="fas fa-link"></i>
-                    </span>
-                    <input type="url" id="scrape_link" name="scrape_link" class="form-control"
-                        placeholder="Enter website URL" required />
-                </div>
+    <div class="row">
+        <!-- Website Scraping Form -->
+        <div class="col-md-6">
+            <div class="scraping-form mb-4">
+                <h3 class="mb-4">Website Scraping</h3>
+                <form method="post" action="{{ url_for('scrape_job_listing') }}">
+                    <div class="form-group mb-4">
+                        <label class="form-label" for="scrape_link">Website to Scrape</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-link"></i>
+                            </span>
+                            <input type="url" id="scrape_link" name="scrape_link" class="form-control"
+                                placeholder="Enter website URL" required />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-spider me-2"></i>
+                            Scrape Website
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-spider me-2"></i>
-                    Scrape Website
-                </button>
+        </div>
+
+        <!-- File Upload Form -->
+        <div class="col-md-6">
+            <div class="scraping-form mb-4">
+                <h3 class="mb-4">Upload Job Listing</h3>
+                <form method="post" action="{{ url_for('upload_job_listing') }}" enctype="multipart/form-data">
+                    <div class="form-group mb-4">
+                        <label class="form-label" for="job_file">Job Listing File</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-file-alt"></i>
+                            </span>
+                            <input type="file" id="job_file" name="job_file" class="form-control"
+                                accept=".txt,.html,.htm" required />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload File
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
 
     <!-- Previously Scraped Data -->

@@ -28,7 +28,9 @@ from webscrape_service import scrape_website, save_html_to_file
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import os
+import json
 from company_service import register_company, delete_company, edit_company
 from gpt_service import send_gpt_prompt, process_html_with_gpt
 import io
@@ -156,7 +158,7 @@ def view_emails():
         page = request.args.get("page", 1, type=int)
         per_page = 10  # Number of emails per page
         emails, total_count = get_gmail_emails(page=page, per_page=per_page)
-        total_pages = (total_count + per_page - 1) // per_page  # Calculate total pages
+        total_pages = (total_count + per_page - 1) // per_page
 
         return render_template(
             "view_emails.html",
@@ -300,7 +302,7 @@ def scrape_job_listing():
 @login_required
 def process_html(html_type, id):
     # Hämta HTML från databasen baserat på typen
-    scraped_content = ScrapedContent.query.get(id)
+    scraped_content = db.session.get(ScrapedContent, id)
     if not scraped_content:
         flash("Error: Content not found.", "danger")
         return redirect(url_for("webscraping"))
@@ -346,9 +348,11 @@ def generate_filenames():
             return jsonify({"error": "No IDs provided"}), 400
 
         # Hämta skrapad data från databasen
-        scraped_data = ScrapedContent.query.filter(
-            ScrapedContent.id.in_(scraped_data_ids)
-        ).all()
+        scraped_data = (
+            db.session.query(ScrapedContent)
+            .filter(ScrapedContent.id.in_(scraped_data_ids))
+            .all()
+        )
         if not scraped_data:
             return jsonify({"error": "No data found for provided IDs"}), 404
 
@@ -374,8 +378,8 @@ def generate_filenames():
             match = re.search(r"listing_name\s*=\s*(\S+)", naming_gpt_response)
             if match:
                 listing_name = match.group(1).strip()
-                item.listing_name = listing_name  # Uppdatera databasen
-                item.generated_name = listing_name  # Spara det genererade namnet
+                item.listing_name = listing_name
+                item.generated_name = listing_name
                 filenames.append(f"{listing_name}.html")
                 results.append({"id": item.id, "name": listing_name})
             else:
@@ -444,7 +448,7 @@ def save_file():
 
 
 def get_data_by_id(data_id):
-    return ScrapedContent.query.get(data_id)
+    return db.session.get(ScrapedContent, data_id)
 
 
 def capitalize_first_letter(string):
@@ -462,7 +466,7 @@ def auto_log_company():
 @app.route("/webscraping", methods=["GET", "POST"])
 @login_required
 def webscraping():
-    scraped_data = ScrapedContent.query.all()
+    scraped_data = db.session.query(ScrapedContent).all()
     return render_template("webscraping.html", scraped_data=scraped_data)
 
 
@@ -472,7 +476,7 @@ def register_company_route():
     if request.method == "POST":
         return register_company()
     today = datetime.now().strftime("%Y-%m-%d")
-    scraped_data = ScrapedContent.query.all()
+    scraped_data = db.session.query(ScrapedContent).all()
     return render_template(
         "register_company.html", scraped_data=scraped_data, today=today
     )
@@ -499,35 +503,31 @@ def autofill_company():
             return jsonify({"error": "No data ID provided"}), 400
 
         # Get the scraped content
-        scraped_content = ScrapedContent.query.get(data_id)
-        if not scraped_content or not scraped_content.gpt_cleaned_html:
-            return jsonify({"error": "No cleaned HTML data found"}), 404
+        scraped_content = db.session.get(ScrapedContent, data_id)
+        if not scraped_content:
+            return jsonify({"error": "No data found"}), 404
 
-        # Use the compose assistant to extract company information
-        prompt = f"""
-        Extract company information from the job listing HTML below.
-        Link: "{scraped_content.scraped_url}"
-        HTML Content:{scraped_content.gpt_cleaned_html}
-        """
+        # Get the content to process from gpt_cleaned_html (which contains the raw text)
+        content_to_process = scraped_content.gpt_cleaned_html
 
-        # Get response from GPT
-        gpt_response = send_gpt_prompt(prompt, assistant_id=autofill_assistant_id)
+        # Process with GPT to get JSON format for form filling
+        gpt_response = process_html_with_gpt(
+            content_to_process, autofill_assistant_id
+        )
 
-        # Try to clean up the response if needed
+        # Clean up the response thoroughly
         gpt_response = gpt_response.strip()
-        if not gpt_response.startswith("{"):
-            # Find the first { and last }
-            start = gpt_response.find("{")
-            end = gpt_response.rfind("}") + 1
-            if start >= 0 and end > start:
-                gpt_response = gpt_response[start:end]
-            else:
-                raise ValueError("GPT response does not contain valid JSON")
+        
+        # Find the first { and last } to extract only the JSON part
+        start = gpt_response.find("{")
+        end = gpt_response.rfind("}") + 1
+        if start >= 0 and end > start:
+            gpt_response = gpt_response[start:end]
+        else:
+            raise ValueError("Could not find valid JSON in GPT response")
 
-        # Validate JSON
-        import json
-
-        json.loads(gpt_response)  # This will raise an error if invalid JSON
+        # Validate that we got valid JSON back
+        json.loads(gpt_response)
 
         return jsonify({"response": gpt_response}), 200
 
@@ -535,6 +535,49 @@ def autofill_company():
         return jsonify({"error": f"Invalid JSON response from GPT: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/upload-job-listing", methods=["POST"])
+@login_required
+def upload_job_listing():
+    try:
+        if "job_file" not in request.files:
+            flash("No file selected", "error")
+            return redirect(url_for("webscraping"))
+
+        file = request.files["job_file"]
+
+        if file.filename == "":
+            flash("No file selected", "error")
+            return redirect(url_for("webscraping"))
+
+        # Get filename without extension as listing name
+        listing_name = os.path.splitext(secure_filename(file.filename))[0]
+
+        # Read the file content
+        content = file.read().decode("utf-8")
+
+        # Create a new ScrapedContent entry - save the raw text content as is
+        new_scrape = ScrapedContent(
+            listing_name=listing_name,
+            raw_html=content,  # Original text content
+            pretty_html=content,  # Same as raw for text files
+            filtered_html=content,  # Same as raw for text files
+            gpt_cleaned_html=content,  # Save the raw text, will be processed during autofill
+            scraped_url="file://" + secure_filename(file.filename),
+            scraped_date=datetime.now(),
+        )
+
+        db.session.add(new_scrape)
+        db.session.commit()
+
+        flash("File uploaded successfully!", "success")
+        return redirect(url_for("webscraping"))
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error uploading file: {str(e)}", "error")
+        return redirect(url_for("webscraping"))
 
 
 @app.route("/delete_scrape/<int:id>", methods=["POST"])
