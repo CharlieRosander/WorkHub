@@ -172,23 +172,46 @@
     }
 
     async function generateFromSource() {
-        const gptStatus = document.getElementById('gptStatus');
-        const generateButton = document.querySelector('button[onclick="generateFromSource()"]');
-        const sourceContent = document.getElementById('source_content').value;
-        const additionalInstructions = document.getElementById('additional_instructions').value;
-
-        if (!sourceContent) {
-            gptStatus.className = 'alert alert-warning mt-3';
-            gptStatus.textContent = 'Please enter source content';
-            gptStatus.style.display = 'block';
-            return;
-        }
-
         try {
-            generateButton.disabled = true;
-            gptStatus.className = 'alert alert-info mt-3';
-            gptStatus.textContent = 'Generating response...';
-            gptStatus.style.display = 'block';
+            const gptStatus = document.getElementById('gptStatus');
+            const gptResponseElement = document.getElementById('gpt_response');
+            const sourceContentElement = document.getElementById('source_content');
+            const additionalInstructionsElement = document.getElementById('additional_instructions');
+            
+            // Check if required elements exist
+            if (!sourceContentElement || !gptResponseElement) {
+                console.error('Error: Required elements not found');
+                return;
+            }
+            
+            const sourceContent = sourceContentElement.value;
+            const additionalInstructions = additionalInstructionsElement ? additionalInstructionsElement.value : '';
+            
+            // Find the generate button
+            const generateButton = document.querySelector('button[onclick="generateFromSource()"]');
+            
+            if (!sourceContent) {
+                if (gptStatus) {
+                    gptStatus.className = 'alert alert-warning mt-3';
+                    gptStatus.textContent = 'Please enter source content';
+                    gptStatus.style.display = 'block';
+                } else {
+                    alert('Please enter source content');
+                }
+                return;
+            }
+
+            // Disable button if it exists
+            if (generateButton) {
+                generateButton.disabled = true;
+            }
+            
+            // Show status if element exists
+            if (gptStatus) {
+                gptStatus.className = 'alert alert-info mt-3';
+                gptStatus.textContent = 'Generating response...';
+                gptStatus.style.display = 'block';
+            }
 
             const response = await fetch('/generate_gpt_from_link', {
                 method: 'POST',
@@ -204,18 +227,32 @@
             const result = await response.json();
 
             if (response.ok) {
-                document.getElementById('gpt_response').value = result.response;
-                gptStatus.className = 'alert alert-success mt-3';
-                gptStatus.textContent = 'Response generated successfully!';
+                gptResponseElement.value = result.response;
+                
+                if (gptStatus) {
+                    gptStatus.className = 'alert alert-success mt-3';
+                    gptStatus.textContent = 'Response generated successfully!';
+                }
             } else {
                 throw new Error(result.message || 'Failed to generate response');
             }
         } catch (error) {
             console.error('Error:', error);
-            gptStatus.className = 'alert alert-danger mt-3';
-            gptStatus.textContent = 'Error generating response: ' + error.message;
+            
+            const gptStatus = document.getElementById('gptStatus');
+            if (gptStatus) {
+                gptStatus.className = 'alert alert-danger mt-3';
+                gptStatus.textContent = 'Error generating response: ' + error.message;
+                gptStatus.style.display = 'block';
+            } else {
+                alert('Error generating response: ' + error.message);
+            }
         } finally {
-            generateButton.disabled = false;
+            // Re-enable button if it exists
+            const generateButton = document.querySelector('button[onclick="generateFromSource()"]');
+            if (generateButton) {
+                generateButton.disabled = false;
+            }
         }
     }
 </script>

@@ -237,8 +237,10 @@ def regenerate_gpt_response():
 @login_required
 def generate_gpt_from_link():
     try:
-        source_content = request.form.get("source_content", "")
-        additional_instructions = request.form.get("additional_instructions", "")
+        # Get data from JSON request instead of form
+        data = request.json
+        source_content = data.get("source_content", "")
+        additional_instructions = data.get("additional_instructions", "")
 
         # Combine content and instructions for GPT
         prompt = f"Source Content:\n{source_content}\n\nInstructions:\n{additional_instructions}"
