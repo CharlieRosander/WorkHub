@@ -81,11 +81,9 @@
                         <div class="d-grid gap-2 mb-4">
                             <button type="button" id="useGptBtn" class="btn btn-primary" onclick="useGptResponse()">
                                 <i class="fas fa-check me-2"></i>Use GPT Response
-                                <span id="useGptSpinner" class="spinner-border spinner-border-sm ms-1" role="status" style="display: none;"></span>
                             </button>
                             <button type="button" id="regenerateBtn" class="btn btn-warning" onclick="regenerateResponse()">
-                                <span id="regenerateBtnText"><i class="fas fa-sync me-2"></i>Regenerate Response</span>
-                                <span id="regenerateSpinner" class="spinner-border spinner-border-sm ms-1" role="status" style="display: none;"></span>
+                                <i class="fas fa-sync me-2"></i>Regenerate Response
                             </button>
                         </div>
 
@@ -104,8 +102,7 @@
                                     placeholder="Enter additional comments or instructions here"></textarea>
                             </div>
                             <button type="button" id="generateSourceBtn" class="btn btn-info w-100" onclick="generateFromSource()">
-                                <span id="generateSourceBtnText"><i class="fas fa-magic me-2"></i>Generate from Source</span>
-                                <span id="generateSourceSpinner" class="spinner-border spinner-border-sm ms-1" role="status" style="display: none;"></span>
+                                <i class="fas fa-magic me-2"></i>Generate from Source
                             </button>
                         </div>
                     </form>
@@ -122,30 +119,20 @@
         const gptResponse = document.getElementById("gpt_response").value;
         const messageElement = document.getElementById("message");
         const useGptBtn = document.getElementById("useGptBtn");
-        const useGptSpinner = document.getElementById("useGptSpinner");
         
-        // Visuell feedback att knappen trycks
-        useGptBtn.disabled = true;
-        useGptSpinner.style.display = "inline-block";
+        // Visa laddningsindikator
+        showLoading(useGptBtn, "Copying...");
         
         // Kopiera GPT-svar till meddelande
         messageElement.value = gptResponse;
         
         // Lite delay för visuell feedback
         setTimeout(() => {
-            // Återställ knappstatus
-            useGptBtn.disabled = false;
-            useGptSpinner.style.display = "none";
+            // Återställ knappen
+            restoreButton(useGptBtn);
             
             // Visuell feedback att kopieringen lyckades
-            useGptBtn.classList.remove("btn-primary");
-            useGptBtn.classList.add("btn-success");
-            
-            // Återställ efter en stund
-            setTimeout(() => {
-                useGptBtn.classList.remove("btn-success");
-                useGptBtn.classList.add("btn-primary");
-            }, 1000);
+            giveButtonFeedback(useGptBtn, "success", 1000);
             
             // Fokusera meddelandefältet för enkelt redigering
             messageElement.focus();
@@ -191,13 +178,9 @@
             gptStatus.textContent = 'Regenerating response...';
         }
         
-        // Visa laddningsindikator och inaktivera knappen
-        if (regenerateBtn && regenerateSpinner) {
-            regenerateBtn.disabled = true;
-            regenerateSpinner.style.display = 'inline-block';
-            if (regenerateBtnText) {
-                regenerateBtnText.textContent = 'Regenerating...';
-            }
+        // Visa laddningsindikator med global funktion
+        if (regenerateBtn) {
+            showLoading(regenerateBtn, "Regenerating...");
         }
         
         // Hämta det nuvarande GPT-svaret
@@ -254,13 +237,9 @@
             return response.json();
         })
         .then(data => {
-            // Återställ UI-element
-            if (regenerateBtn && regenerateSpinner) {
-                regenerateBtn.disabled = false;
-                regenerateSpinner.style.display = 'none';
-                if (regenerateBtnText) {
-                    regenerateBtnText.innerHTML = '<i class="fas fa-sync me-2"></i>Regenerate Response';
-                }
+            // Återställ knappen med global funktion
+            if (regenerateBtn) {
+                restoreButton(regenerateBtn);
             }
             
             // Uppdatera svarstext
@@ -278,34 +257,20 @@
                 }, 3000);
             }
             
-            // Ge visuell feedback på knappen
+            // Ge visuell feedback på knappen med global funktion
             if (regenerateBtn) {
-                regenerateBtn.classList.remove("btn-warning");
-                regenerateBtn.classList.add("btn-success");
-                setTimeout(() => {
-                    regenerateBtn.classList.remove("btn-success");
-                    regenerateBtn.classList.add("btn-warning");
-                }, 1000);
+                giveButtonFeedback(regenerateBtn, "success", 1000);
             }
         })
         .catch(error => {
             console.error('Error:', error);
             
-            // Återställ UI-element
-            if (regenerateBtn && regenerateSpinner) {
-                regenerateBtn.disabled = false;
-                regenerateSpinner.style.display = 'none';
-                if (regenerateBtnText) {
-                    regenerateBtnText.innerHTML = '<i class="fas fa-sync me-2"></i>Regenerate Response';
-                }
+            // Återställ knappen med global funktion
+            if (regenerateBtn) {
+                restoreButton(regenerateBtn);
                 
-                // Visa visuell feedback att det misslyckades
-                regenerateBtn.classList.remove("btn-warning");
-                regenerateBtn.classList.add("btn-danger");
-                setTimeout(() => {
-                    regenerateBtn.classList.remove("btn-danger");
-                    regenerateBtn.classList.add("btn-warning");
-                }, 2000);
+                // Visa visuell feedback att det misslyckades med global funktion
+                giveButtonFeedback(regenerateBtn, "error", 2000);
             }
             
             // Visa felmeddelande
@@ -325,8 +290,11 @@
             const sourceContentElement = document.getElementById('source_content');
             const additionalInstructionsElement = document.getElementById('additional_instructions');
             const generateBtn = document.getElementById('generateSourceBtn');
-            const generateSpinner = document.getElementById('generateSourceSpinner');
-            const generateBtnText = document.getElementById('generateSourceBtnText');
+            
+            // Sätt det ursprungliga innehållet med ikon om det inte redan är sparat
+            if (!generateBtn.hasAttribute('data-original-content')) {
+                generateBtn.setAttribute('data-original-content', '<i class="fas fa-magic me-2"></i>Generate from Source');
+            }
             
             // Kontrollera om nödvändiga element finns
             if (!sourceContentElement || !gptResponseElement) {
@@ -348,13 +316,9 @@
                 return;
             }
 
-            // Inaktivera knappen och visa laddningsindikator
-            if (generateBtn && generateSpinner) {
-                generateBtn.disabled = true;
-                generateSpinner.style.display = 'inline-block';
-                if (generateBtnText) {
-                    generateBtnText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
-                }
+            // Inaktivera knappen och visa laddningsindikator med global funktion
+            if (generateBtn) {
+                showLoading(generateBtn, "Generating...");
             }
             
             // Visa status
@@ -387,14 +351,11 @@
                     gptStatus.textContent = 'Response generated successfully!';
                 }
                 
-                // Ge visuell feedback att det lyckades
+                // Återställ knappen först med global funktion
                 if (generateBtn) {
-                    generateBtn.classList.remove("btn-info");
-                    generateBtn.classList.add("btn-success");
-                    setTimeout(() => {
-                        generateBtn.classList.remove("btn-success");
-                        generateBtn.classList.add("btn-info");
-                    }, 1000);
+                    restoreButton(generateBtn);
+                    // Ge sedan visuell feedback att det lyckades med global funktion
+                    giveButtonFeedback(generateBtn, "success", 1000);
                 }
             } else {
                 throw new Error(result.message || 'Failed to generate response');
@@ -412,23 +373,10 @@
                 alert('Error generating response: ' + error.message);
             }
             
-            // Ge visuell feedback att det misslyckades
+            // Återställ knappen först och ge sedan visuell feedback
             if (generateBtn) {
-                generateBtn.classList.remove("btn-info");
-                generateBtn.classList.add("btn-danger");
-                setTimeout(() => {
-                    generateBtn.classList.remove("btn-danger");
-                    generateBtn.classList.add("btn-info");
-                }, 2000);
-            }
-        } finally {
-            // Återställ knappen och dölj laddningsindikatorn
-            if (generateBtn && generateSpinner) {
-                generateBtn.disabled = false;
-                generateSpinner.style.display = 'none';
-                if (generateBtnText) {
-                    generateBtnText.innerHTML = '<i class="fas fa-magic me-2"></i>Generate from Source';
-                }
+                restoreButton(generateBtn);
+                giveButtonFeedback(generateBtn, "error", 2000);
             }
         }
     }
@@ -440,8 +388,11 @@
         // Hitta nödvändiga element
         const form = event.target;
         const sendBtn = document.getElementById('sendEmailBtn');
-        const sendBtnText = document.getElementById('sendEmailBtnText');
-        const sendBtnSpinner = document.getElementById('sendEmailBtnSpinner');
+        
+        // Sätt det ursprungliga innehållet med ikon om det inte redan är sparat
+        if (!sendBtn.hasAttribute('data-original-content')) {
+            sendBtn.setAttribute('data-original-content', '<i class="fas fa-paper-plane me-2"></i>Send Email');
+        }
         
         // Validera formuläret
         if (!form.checkValidity()) {
@@ -451,13 +402,9 @@
         }
         
         try {
-            // Visa laddningsindikator och inaktivera knappen
-            if (sendBtn && sendBtnSpinner) {
-                sendBtn.disabled = true;
-                sendBtnSpinner.style.display = 'inline-block';
-                if (sendBtnText) {
-                    sendBtnText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
-                }
+            // Visa laddningsindikator med global funktion
+            if (sendBtn) {
+                showLoading(sendBtn, "Sending...");
             }
             
             // Skapa FormData från formuläret
@@ -489,14 +436,10 @@
             }
             formContainer.appendChild(statusDiv);
             
-            // Ge visuell feedback på knappen
+            // Återställ knappen först och ge sedan visuell feedback med global funktion
             if (sendBtn) {
-                sendBtn.classList.remove("btn-primary");
-                sendBtn.classList.add(result.success ? "btn-success" : "btn-danger");
-                setTimeout(() => {
-                    sendBtn.classList.remove(result.success ? "btn-success" : "btn-danger");
-                    sendBtn.classList.add("btn-primary");
-                }, 2000);
+                restoreButton(sendBtn);
+                giveButtonFeedback(sendBtn, result.success ? "success" : "error", 2000);
             }
             
             // Om det skickades framgångsrikt, återställ formuläret men behåll e-postadressen
@@ -530,23 +473,10 @@
             }
             formContainer.appendChild(statusDiv);
             
-            // Ge visuell feedback på knappen
+            // Återställ knappen och ge visuell feedback med global funktion
             if (sendBtn) {
-                sendBtn.classList.remove("btn-primary");
-                sendBtn.classList.add("btn-danger");
-                setTimeout(() => {
-                    sendBtn.classList.remove("btn-danger");
-                    sendBtn.classList.add("btn-primary");
-                }, 2000);
-            }
-        } finally {
-            // Återställ knappen och dölj laddningsindikatorn
-            if (sendBtn && sendBtnSpinner) {
-                sendBtn.disabled = false;
-                sendBtnSpinner.style.display = 'none';
-                if (sendBtnText) {
-                    sendBtnText.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send Email';
-                }
+                restoreButton(sendBtn);
+                giveButtonFeedback(sendBtn, "error", 2000);
             }
         }
     }
