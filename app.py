@@ -52,6 +52,7 @@ compose_assistant_id = os.getenv("COMPOSE_ASSISTANT_ID")
 webscrape_assistant_id = os.getenv("WEBSCRAPE_ASSISTANT_ID")
 naming_assistant_id = os.getenv("NAMING_ASSISTANT_ID")
 autofill_assistant_id = os.getenv("AUTOFILL_ASSISTANT_ID")
+generate_regenerate_assistant_id = os.getenv("GENERATE_REGENERATE_ASSISTANT_ID")
 save_path = os.getenv("SAVE_PATH")
 
 # Register Google OAuth blueprint
@@ -130,17 +131,36 @@ def oauth_callback():
 def send_email():
     if request.method == "POST":
         try:
+            # Kontrollera om det är en AJAX-förfrågan eller vanlig formulärinlämning
+            is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            
             success = send_gmail_email(
                 request.form["to"], request.form["subject"], request.form["message"]
             )
+            
             if success:
-                flash("Email sent successfully!", "success")
+                message = "Email sent successfully!"
+                flash(message, "success")
             else:
-                flash("Failed to send email", "error")
-            return redirect(url_for("view_emails"))
+                message = "Failed to send email"
+                flash(message, "error")
+                
+            # Om det är en AJAX-förfrågan, returnera JSON-svar
+            if is_ajax:
+                return jsonify({"success": success, "message": message})
+            # Annars, omdirigera till view_emails som tidigare
+            else:
+                return redirect(url_for("view_emails"))
         except Exception as e:
-            flash(f"Error: {str(e)}", "error")
-            return redirect(url_for("view_emails"))
+            error_message = f"Error: {str(e)}"
+            flash(error_message, "error")
+            
+            # Om det är en AJAX-förfrågan, returnera JSON-svar
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({"success": False, "message": error_message}), 500
+            # Annars, omdirigera till view_emails som tidigare
+            else:  
+                return redirect(url_for("view_emails"))
 
     # Use the prepare_email_data function to get data for the template
     email_data = prepare_email_data(
@@ -197,13 +217,60 @@ def process_email_for_gpt(email_id):
     )
     logging.info(f"GPT response for email {email_id}: {gpt_response}")
 
-    # Bevara ämnet i formuläret
-    email_data = prepare_email_data(
-        email_id=email_id,
-        subject="RE: " + full_email["subject"],
-        gpt_response=gpt_response,
-    )
-    return render_template("send_email.html", **email_data)
+    # Initialisera subject från e-postens ämne som fallback
+    subject = "RE: " + full_email["subject"]
+    
+    # Leta efter JSON-objekt med regex (för både vanliga och enkla citattecken)
+    json_pattern = r'```json\s*({.*?})\s*```|`{.*?}`|\{.*?\}'
+    json_matches = re.finditer(json_pattern, gpt_response, re.DOTALL)
+    
+    for match in json_matches:
+        json_str = match.group(0)
+        # Rensa upp JSON-strängen
+        if json_str.startswith("```json"):
+            json_str = re.sub(r'```json\s*(.*?)\s*```', r'\1', json_str, flags=re.DOTALL)
+        elif json_str.startswith("`") and json_str.endswith("`"):
+            json_str = json_str[1:-1]
+            
+        try:
+            # Försök parsa JSON-data
+            json_data = json.loads(json_str)
+            logging.info(f"Successfully parsed JSON in process_email_for_gpt: {json_data}")
+            
+            # Extrahera subject om det finns
+            if "subject" in json_data:
+                subject = json_data["subject"]
+                
+            # Ta bort JSON-objektet från svaret
+            gpt_response = gpt_response.replace(match.group(0), "").strip()
+            break  # Använd första matchande JSON-objektet
+        except json.JSONDecodeError as e:
+            logging.warning(f"Failed to parse JSON match in process_email_for_gpt: {json_str}, error: {str(e)}")
+            continue
+    
+    # Fallback till gamla regex-mönster om JSON-extraktion misslyckades
+    subject_match = re.search(r"{Subject:\s*(.*?)}", gpt_response, re.IGNORECASE)
+    if subject_match:
+        subject = subject_match.group(1).strip()
+        # Ta bort ämnet från själva svaret
+        gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
+    
+    # Ta bort eventuell {email:...}-tagg från svaret
+    email_match = re.search(r"{email:\s*(.*?)}", gpt_response, re.IGNORECASE)
+    if email_match:
+        gpt_response = gpt_response.replace(email_match.group(0), "").strip()
+
+    # Använd från-adressen som to-adress
+    to_email = full_email.get("from", "")
+    
+    # För att debugga: Logga värden för att se vad som faktiskt skickas
+    logging.info(f"Sending to template - subject: '{subject}', to: '{to_email}'")
+    
+    return render_template("send_email.html", 
+                          email=full_email,  
+                          subject=subject, 
+                          to=to_email, 
+                          gpt_response=gpt_response)
 
 
 ## This route is the "Regenerate" assistant-type of the GPT call - MAYBE, currently using compose ##
@@ -211,24 +278,135 @@ def process_email_for_gpt(email_id):
 @login_required
 def regenerate_gpt_response():
     try:
-        email_body = request.form.get("email_body", "")
-        subject = request.form.get("subject", "")
-        to = request.form.get("to", "")
-
-        comment = "Please regenerate the response and provide a different draft."
-        gpt_request = f"{email_body}\n\n{comment}"
+        # Hämta data från JSON istället för form
+        data = request.get_json()
+        email_id = data.get("email_id")
+        context_type = data.get("context_type", "email")  # email, source eller annan kontext
+        additional_instruction = data.get("additional_instruction", "")
+        current_response = data.get("current_response", "")
+        
+        # Om vi har ett email_id, hämta e-postinnehållet
+        if email_id:
+            email = get_gmail_email_by_id(email_id)
+            if not email:
+                return jsonify({"message": "Email not found"}), 404
+                
+            email_body = email.get("body", "")
+            # Endast sätt to_email till avsändarens adress om vi svarar på ett explicit e-postmeddelande
+            # Om vi svarar på ett e-postmeddelande, behåll den ursprungliga from-adressen
+            to_email = email.get("from", "") if context_type == "email" else ""
+            
+            # Grundinstruktion för att regenerera
+            gpt_request = f"Original Email:\n\n{email_body}\n\n"
+            
+            if current_response:
+                gpt_request += f"Current Response:\n\n{current_response}\n\n"
+            
+            gpt_request += "Please regenerate the response with different wording and structure while maintaining the context and intent."
+            
+            # Lägg till eventuella ytterligare instruktioner
+            if additional_instruction:
+                gpt_request += f"\n\nAdditional Instructions: {additional_instruction}"
+        else:
+            # Om vi inte har ett email_id, använd innehållet direkt
+            source_content = data.get("source_content", "")
+            
+            to_email = ""  # Sätt till tomt för att låta GPT extrahera e-post
+            
+            gpt_request = f"Original Content:\n\n{source_content}\n\n"
+            
+            if current_response:
+                gpt_request += f"Current Response:\n\n{current_response}\n\n"
+                
+            gpt_request += "Please regenerate this response with different wording and structure."
+            
+            if additional_instruction:
+                gpt_request += f"\n\nAdditional Instructions: {additional_instruction}"
 
         # Send to Compose-assistant for new response
-        gpt_response = send_gpt_prompt(gpt_request, assistant_id=compose_assistant_id)
+        gpt_response = send_gpt_prompt(
+            gpt_request, assistant_id=compose_assistant_id
+        )
+        
+        # Logg för debugging
+        logging.info(f"Raw GPT response (regenerate): {gpt_response[:100]}...")
 
-        # Extract subject if present
-        subject_match = re.search(r"{Subject:\s*(.*?)}", gpt_response)
-        if subject_match:
-            subject = subject_match.group(1).strip()
-            gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
-
-        return jsonify({"response": gpt_response, "subject": subject}), 200
+        # Initialisera subject och to_email
+        subject = ""
+        if email_id and context_type == "email":
+            subject = f"RE: {email.get('subject', '')}"
+            
+        # Försök hitta JSON-data i responsen
+        json_pattern = r'```json\s*({.*?})\s*```|`{.*?}`|\{.*?\}'
+        json_matches = re.finditer(json_pattern, gpt_response, re.DOTALL)
+        
+        for match in json_matches:
+            json_str = match.group(0)
+            # Rensa upp JSON-strängen
+            if json_str.startswith("```json"):
+                json_str = re.sub(r'```json\s*(.*?)\s*```', r'\1', json_str, flags=re.DOTALL)
+            elif json_str.startswith("`") and json_str.endswith("`"):
+                json_str = json_str[1:-1]
+                
+            try:
+                # Försök parsa JSON-data
+                json_data = json.loads(json_str)
+                logging.info(f"Successfully parsed JSON in regenerate_gpt_response: {json_data}")
+                
+                # Extrahera subject och email om de finns
+                if "subject" in json_data:
+                    subject = json_data["subject"]
+                if "email" in json_data and json_data["email"] != "No email found":
+                    # Använd bara e-post från JSON om vi INTE svarar på ett explicit e-postmeddelande
+                    # Om vi svarar på ett e-postmeddelande, behåll den ursprungliga from-adressen
+                    if context_type != "email":
+                        to_email = json_data["email"]
+                    
+                # Ta bort JSON-objektet från svaret
+                gpt_response = gpt_response.replace(match.group(0), "").strip()
+                break  # Använd första matchande JSON-objektet
+            except json.JSONDecodeError as e:
+                logging.warning(f"Failed to parse JSON match in regenerate_gpt_response: {json_str}, error: {str(e)}")
+                continue
+                
+        # Fallback till gamla regex-mönster om JSON-extraktion misslyckades
+        if not subject or (not to_email and context_type != "email"):
+            # Try pattern with brackets first for subject
+            subject_match = re.search(r"{Subject:\s*(.*?)}", gpt_response, re.IGNORECASE)
+            if subject_match:
+                subject = subject_match.group(1).strip()
+                gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
+            else:
+                # Try pattern at beginning of text
+                subject_match = re.search(r"^Subject:\s*(.*?)$", gpt_response, re.IGNORECASE | re.MULTILINE)
+                if subject_match:
+                    subject = subject_match.group(1).strip()
+                    gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
+            
+            # Try pattern with brackets first for email
+            email_match = re.search(r"{email:\s*(.*?)}", gpt_response, re.IGNORECASE) 
+            if email_match:
+                extracted_email = email_match.group(1).strip()
+                # Använd extraherad e-post endast om den inte är "No email found"
+                # OCH om vi inte svarar på ett e-postmeddelande (där vi redan har avsändarens adress)
+                if extracted_email and "no email" not in extracted_email.lower() and context_type != "email":
+                    to_email = extracted_email
+                gpt_response = gpt_response.replace(email_match.group(0), "").strip()
+            elif context_type != "email":
+                # Om vi inte kom från ett e-postmeddelande, försök hitta en e-postadress i texten
+                email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', gpt_response)
+                if email_match:
+                    to_email = email_match.group(0)
+                    
+        # Logg för debugging
+        logging.info(f"Filtered response (first 100 chars): {gpt_response[:100]}...")
+            
+        # Returnera endast GPT-svarstexten
+        return jsonify({
+            "response": gpt_response
+        }), 200
     except Exception as e:
+        logging.error(f"Error in regenerate_gpt_response: {str(e)}")
         return jsonify({"message": f"Error: {str(e)}"}), 500
 
 
@@ -237,27 +415,107 @@ def regenerate_gpt_response():
 @login_required
 def generate_gpt_from_link():
     try:
-        # Get data from JSON request instead of form
-        data = request.json
+        data = request.get_json()
         source_content = data.get("source_content", "")
-        additional_instructions = data.get("additional_instructions", "")
+        additional_instruction = data.get("additional_instructions", "")
+        
+        logging.info(f"Source content length: {len(source_content)}")
+        logging.info(f"Additional instruction: {additional_instruction}")
+        
+        if not source_content:
+            return jsonify({"message": "Source content is required"}), 400
+        
+        # Prepare GPT prompt med instruktioner
+        gpt_prompt = f"Job posting or text source:\n\n{source_content}\n\n"
+        
+        if additional_instruction:
+            gpt_prompt += f"Additional instruction: {additional_instruction}\n\n"
+        
+        # Default instruktioner
+        gpt_prompt += """
+        Please help me draft a response to this. If this is a job opportunity, craft a personalized cover letter.
+        
+        If the source has an email address, please include it in the format: {email: example@example.com}
+        If there's a clear subject for the response, please include it in the format: {Subject: The Subject Line}
+        
+        Make the response professional, personal, and compelling.
+        """
+        
+        # Skicka till GPT för respons
+        gpt_response = send_gpt_prompt(gpt_prompt, assistant_id=compose_assistant_id)
+        
+        # Logg för debugging
+        logging.info(f"Raw GPT response: {gpt_response[:100]}...")
+        
+        # Försök hitta JSON-data i responsen
+        subject = ""
+        to_email = ""
+        
+        # Leta efter JSON-objekt med regex (för både vanliga och enkla citattecken)
+        json_pattern = r'```json\s*({.*?})\s*```|`{.*?}`|\{.*?\}'
+        json_matches = re.finditer(json_pattern, gpt_response, re.DOTALL)
+        
+        for match in json_matches:
+            json_str = match.group(0)
+            # Rensa upp JSON-strängen
+            if json_str.startswith("```json"):
+                json_str = re.sub(r'```json\s*(.*?)\s*```', r'\1', json_str, flags=re.DOTALL)
+            elif json_str.startswith("`") and json_str.endswith("`"):
+                json_str = json_str[1:-1]
+                
+            try:
+                # Försök parsa JSON-data
+                json_data = json.loads(json_str)
+                logging.info(f"Successfully parsed JSON: {json_data}")
+                
+                # Extrahera subject och email om de finns
+                if "subject" in json_data:
+                    subject = json_data["subject"]
+                if "email" in json_data and json_data["email"] != "No email found":
+                    to_email = json_data["email"]
+                    
+                # Ta bort JSON-objektet från svaret
+                gpt_response = gpt_response.replace(match.group(0), "").strip()
+                break  # Använd första matchande JSON-objektet
+            except json.JSONDecodeError as e:
+                logging.warning(f"Failed to parse JSON match: {json_str}, error: {str(e)}")
+                continue
 
-        # Combine content and instructions for GPT
-        prompt = f"Source Content:\n{source_content}\n\nInstructions:\n{additional_instructions}"
-
-        # Generate response using compose assistant
-        gpt_response = send_gpt_prompt(prompt, assistant_id=compose_assistant_id)
-
-        # Extract subject if present
-        subject_match = re.search(r"{Subject:\s*(.*?)}", gpt_response)
-        if subject_match:
-            subject = subject_match.group(1).strip()
-            gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
-        else:
-            subject = ""
-
-        return jsonify({"response": gpt_response, "subject": subject}), 200
+        # Om JSON-extraktion misslyckades, försök med de gamla regex-mönstren
+        if not subject:
+            # Try pattern with brackets first
+            subject_match = re.search(r"{Subject:\s*(.*?)}", gpt_response, re.IGNORECASE)
+            if subject_match:
+                subject = subject_match.group(1).strip()
+                gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
+            else:
+                # Try pattern at beginning of text
+                subject_match = re.search(r"^Subject:\s*(.*?)$", gpt_response, re.IGNORECASE | re.MULTILINE)
+                if subject_match:
+                    subject = subject_match.group(1).strip()
+                    gpt_response = gpt_response.replace(subject_match.group(0), "").strip()
+        
+        if not to_email:
+            # Try pattern with brackets first
+            email_match = re.search(r"{email:\s*(.*?)}", gpt_response, re.IGNORECASE)
+            if email_match:
+                email = email_match.group(1).strip()
+                to_email = "" if "no email" in email.lower() else email
+                gpt_response = gpt_response.replace(email_match.group(0), "").strip()
+            else:
+                # Try looking for standard email pattern
+                email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', gpt_response)
+                if email_match:
+                    to_email = email_match.group(0)
+        
+        # Logg för debugging efter filtrering
+        logging.info(f"Extracted subject: '{subject}'")
+        logging.info(f"Extracted email: '{to_email}'")
+        logging.info(f"Filtered response (first 100 chars): {gpt_response[:100]}...")
+        
+        return jsonify({"response": gpt_response, "subject": subject, "to": to_email}), 200
     except Exception as e:
+        logging.error(f"Error in generate_gpt_from_link: {str(e)}")
         return jsonify({"message": f"Error: {str(e)}"}), 500
 
 
@@ -532,7 +790,6 @@ def autofill_company():
         json.loads(gpt_response)
 
         return jsonify({"response": gpt_response}), 200
-
     except json.JSONDecodeError as e:
         return jsonify({"error": f"Invalid JSON response from GPT: {str(e)}"}), 500
     except Exception as e:

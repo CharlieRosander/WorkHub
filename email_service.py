@@ -18,7 +18,14 @@ def prepare_email_data(email_id=None, subject=None, gpt_response=None):
         if email_id
         else {"from": "", "subject": "", "body": ""}
     )
-    return {"email": email, "subject": subject, "gpt_response": gpt_response}
+    # Extrahera to-email från avsändarens adress
+    to_email = email.get("from", "") if email_id else ""
+    return {
+        "email": email, 
+        "subject": subject, 
+        "gpt_response": gpt_response,
+        "to": to_email
+    }
 
 
 def send_gmail_email(to, subject, message_text):
